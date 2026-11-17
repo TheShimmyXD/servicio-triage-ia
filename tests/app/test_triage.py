@@ -256,3 +256,52 @@ def test_empresa_con_un_solo_intento_no_reintenta():
     assert resultado.estado is EstadoCaso.ERROR_PLATAFORMA
     assert plataforma.llamadas == 1
     assert "tras 1 intento (" in resultado.justificacion
+
+
+TEXTO_CONSULTA = (
+    "¿Cuáles son los horarios de atención de la oficina principal? Necesito ir a pagar."
+)
+
+
+def test_consulta_sin_cuando_es_respuesta_directa_por_reglas():
+    caso_de_uso, plataformas = _armar()
+    resultado = caso_de_uso.ejecutar(Solicitud("GASES DEL ORINOCO", "C-1", TEXTO_CONSULTA))
+    assert resultado.solicitud_tipo == "Consulta informativa"
+    assert resultado.proximo_paso.value == "RESPUESTA_DIRECTA"
+    assert resultado.estado is EstadoCaso.CERRADO
+    assert plataformas["GASES DEL ORINOCO"].casos == []
+
+
+def test_sin_excepcion_por_categoria_la_consulta_se_cierra():
+    caso_de_uso, _ = _armar()
+    gases = caso_de_uso.catalogo.obtener("GASES DEL ORINOCO")
+    sin_excepcion = replace(
+        gases, informacion_minima=replace(gases.informacion_minima, por_categoria={})
+    )
+    otras = [e for e in caso_de_uso.catalogo.empresas if e.nombre != gases.nombre]
+    caso_de_uso.catalogo = CatalogoEmpresas([sin_excepcion, *otras])
+    resultado = caso_de_uso.ejecutar(Solicitud("GASES DEL ORINOCO", "C-2", TEXTO_CONSULTA))
+    assert resultado.proximo_paso.value == "CIERRE_POR_INFORMACION_INSUFICIENTE"
+
+
+def test_consulta_con_el_llm_es_respuesta_directa():
+    analisis = AnalisisLLM(
+        categoria="Consulta informativa",
+        informacion_suficiente=True,
+        hechos=None,
+        tipo_documento=None,
+        numero_documento=None,
+    )
+    caso_de_uso, plataformas = _armar(AnalizadorFalso(respuesta=analisis))
+    resultado = caso_de_uso.ejecutar(Solicitud("GASES DEL ORINOCO", "C-3", TEXTO_CONSULTA))
+    assert resultado.proximo_paso.value == "RESPUESTA_DIRECTA"
+    assert plataformas["GASES DEL ORINOCO"].casos == []
+
+
+def test_el_cierre_no_informa_categoria_de_palabras_clave():
+    caso_de_uso, _ = _armar()
+    resultado = caso_de_uso.ejecutar(
+        Solicitud("GASES DEL ORINOCO", "C-4", "Quiero revisar la factura, gracias")
+    )
+    assert resultado.proximo_paso.value == "CIERRE_POR_INFORMACION_INSUFICIENTE"
+    assert resultado.solicitud_tipo is None

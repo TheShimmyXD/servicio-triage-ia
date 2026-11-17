@@ -39,6 +39,10 @@ informacion_minima:
   frases_extra:
     que_paso: [no me han entregado, no me autorizan, me negaron, formularon, dolor,
                me duele]
+  # Supuesto: una consulta o un trámite no cuenta un hecho con fecha; basta con
+  # saber qué pide (paso 7 del enunciado: se responde directamente).
+  por_categoria:
+    Cita médica: [que_necesita]
 
 plataforma:
   nombre: jira_service_simulada

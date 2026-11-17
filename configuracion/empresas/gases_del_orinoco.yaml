@@ -15,7 +15,8 @@ categorias:
     palabras_clave: [factura, cobro, cobraron, cobro doble, consumo, valor, tarifa]
   - nombre: Consulta informativa
     descripcion: Preguntas sobre horarios, puntos de pago, tarifas vigentes o trámites.
-    palabras_clave: [horario, punto de pago, informacion, consulta, como puedo, donde]
+    palabras_clave: [horario, horarios, punto de pago, puntos de pago, oficina, informacion,
+                     consulta, como puedo, donde]
   - nombre: Solicitud administrativa
     descripcion: Cambio de titular, certificados, paz y salvo o actualización de datos.
     palabras_clave: [certificado, paz y salvo, cambio de titular, actualizar datos,
@@ -45,6 +46,11 @@ delegaciones:
 # Los tres elementos del paso 1 del enunciado.
 informacion_minima:
   requeridos: [que_paso, cuando, que_necesita]
+  # Supuesto: una consulta o un trámite no cuenta un hecho con fecha; basta con
+  # saber qué pide (paso 7 del enunciado: se responde directamente).
+  por_categoria:
+    Consulta informativa: [que_necesita]
+    Solicitud administrativa: [que_necesita]
 
 plataforma:
   nombre: zendesk_simulada

@@ -40,6 +40,11 @@ informacion_minima:
   requeridos: [que_paso, cuando, que_necesita]
   frases_extra:
     que_paso: [no ha llegado, no llego, llego roto]
+  # Supuesto: una consulta o un trámite no cuenta un hecho con fecha; basta con
+  # saber qué pide (paso 7 del enunciado: se responde directamente).
+  por_categoria:
+    Consulta de rastreo: [que_necesita]
+    Cambio de dirección: [que_necesita]
 
 plataforma:
   nombre: salesforce_simulada

@@ -183,3 +183,29 @@ def test_reintentos_de_plataforma_por_empresa(tmp_path):
     # Sin los campos, los valores de siempre.
     por_defecto = cargar_empresa(_escribir(tmp_path, "dos.yaml", EMPRESA_MINIMA.format(nombre="D")))
     assert (por_defecto.plataforma.intentos, por_defecto.plataforma.espera_inicial_s) == (3, 0.2)
+
+
+def test_informacion_minima_por_categoria(tmp_path):
+    base = EMPRESA_MINIMA.format(nombre="CAT")
+    reglas = cargar_empresa(_escribir(tmp_path, "a.yaml", base)).informacion_minima
+    assert reglas.requeridos_para("Falla") == frozenset(ElementoMinimo)
+
+    con_excepcion = base + "informacion_minima:\n  por_categoria:\n    Falla: [que_necesita]\n"
+    reglas = cargar_empresa(_escribir(tmp_path, "b.yaml", con_excepcion)).informacion_minima
+    assert reglas.requeridos_para("Falla") == {ElementoMinimo.QUE_NECESITA}
+    assert reglas.requeridos_para(None) == frozenset(ElementoMinimo)
+
+
+@pytest.mark.parametrize(
+    ("bloque", "mensaje"),
+    [
+        ("    Otra: [que_necesita]\n", "por_categoria nombra categorías que no existen"),
+        ("    Falla: []\n", "por_categoria"),
+    ],
+)
+def test_rechaza_informacion_minima_por_categoria_mal_formada(tmp_path, bloque, mensaje):
+    contenido = EMPRESA_MINIMA.format(nombre="MALA") + (
+        "informacion_minima:\n  por_categoria:\n" + bloque
+    )
+    with pytest.raises(ConfiguracionInvalida, match=mensaje):
+        cargar_empresa(_escribir(tmp_path, "mala.yaml", contenido))

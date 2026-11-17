@@ -128,21 +128,20 @@ class CasoDeUsoTriage:
         documento = _documento_verificado(analisis, texto, empresa.tipos_documento)
         if analisis is not None:
             suficiente = analisis.informacion_suficiente
-            # El esquema obliga al LLM a elegir una categoría aun sin datos; si dice que la
-            # información no alcanza, la categoría solo se conserva si las reglas la ven.
-            categoria: str | None = (
-                analisis.categoria
-                if suficiente
-                else clasificar_por_palabras_clave(texto, empresa.categorias)
-            )
+            categoria: str | None = analisis.categoria
             hecho = _hecho_verificado(analisis, texto, solicitud.solicitud_id)
         else:
             reglas_info = empresa.informacion_minima
-            suficiente = evaluar_informacion_minima(
-                texto, reglas_info.requeridos, reglas_info.frases_extra
-            ).suficiente
             categoria = clasificar_por_palabras_clave(texto, empresa.categorias)
+            # La categoría va primero: de ella depende qué datos exige el paso 1.
+            suficiente = evaluar_informacion_minima(
+                texto, reglas_info.requeridos_para(categoria), reglas_info.frases_extra
+            ).suficiente
             hecho = extraer_hecho_principal(texto)
+        if not suficiente:
+            # El esquema obliga al LLM a elegir una categoría aun sin datos, y las palabras
+            # clave sueltas engañan ("factura" en una consulta): un cierre no la informa.
+            categoria = None
 
         paso = decidir_proximo_paso(suficiente, categoria, empresa.delegaciones)
         decision = self._priorizar(empresa, categoria, documento, texto) if suficiente else None

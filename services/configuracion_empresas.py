@@ -96,6 +96,10 @@ class _ReglasPrioridad(_Estricto):
 class _InformacionMinima(_Estricto):
     requeridos: list[ElementoMinimo] = Field(default_factory=lambda: list(ElementoMinimo))
     frases_extra: dict[ElementoMinimo, list[TextoNoVacio]] = Field(default_factory=dict)
+    # Al menos un elemento: una lista vacía daría por suficiente cualquier texto.
+    por_categoria: dict[str, Annotated[list[ElementoMinimo], Field(min_length=1)]] = Field(
+        default_factory=dict
+    )
 
 
 class _Plataforma(_Estricto):
@@ -149,6 +153,12 @@ class _Empresa(_Estricto):
                 f"reglas_prioridad.por_categoria nombra categorías que no existen: "
                 f"{sorted(desconocidas)}"
             )
+        ajenas = set(self.informacion_minima.por_categoria) - conocidas
+        if ajenas:
+            raise ValueError(
+                f"informacion_minima.por_categoria nombra categorías que no existen: "
+                f"{sorted(ajenas)}"
+            )
         return self
 
     def a_dominio(self, tipos_documento: TiposDocumento) -> ConfiguracionEmpresa:
@@ -170,6 +180,9 @@ class _Empresa(_Estricto):
             informacion_minima=ReglasInformacionMinima(
                 requeridos=frozenset(self.informacion_minima.requeridos),
                 frases_extra={e: tuple(f) for e, f in self.informacion_minima.frases_extra.items()},
+                por_categoria={
+                    c: frozenset(r) for c, r in self.informacion_minima.por_categoria.items()
+                },
             ),
             plataforma=ConfiguracionPlataforma(
                 self.plataforma.nombre,

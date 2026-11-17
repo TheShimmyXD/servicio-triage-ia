@@ -32,6 +32,14 @@ class ReglasInformacionMinima:
 
     requeridos: frozenset[ElementoMinimo] = REQUERIDOS_POR_DEFECTO
     frases_extra: Mapping[ElementoMinimo, tuple[str, ...]] = field(default_factory=dict)
+    por_categoria: Mapping[str, frozenset[ElementoMinimo]] = field(default_factory=dict)
+    """Excepciones por categoría: una consulta de horarios no tiene "cuándo ocurrió"."""
+
+    def requeridos_para(self, categoria: str | None) -> frozenset[ElementoMinimo]:
+        """Lo que exige la categoría si tiene excepción; si no, lo general de la empresa."""
+        if categoria is None:
+            return self.requeridos
+        return self.por_categoria.get(categoria, self.requeridos)
 
 
 @dataclass(frozen=True)

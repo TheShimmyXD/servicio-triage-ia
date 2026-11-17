@@ -38,6 +38,10 @@ informacion_minima:
   requeridos: [que_paso, cuando, que_necesita]
   frases_extra:
     que_paso: [sin senal, sin internet, se cae la llamada, se caen las llamadas]
+  # Supuesto: una consulta o un trámite no cuenta un hecho con fecha; basta con
+  # saber qué pide (paso 7 del enunciado: se responde directamente).
+  por_categoria:
+    Consulta de planes: [que_necesita]
 
 plataforma:
   nombre: freshdesk_simulada

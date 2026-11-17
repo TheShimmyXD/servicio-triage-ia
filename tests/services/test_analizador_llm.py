@@ -13,6 +13,7 @@ from domain.puertos import ErrorLLM
 from services.ajustes import AjustesLLM
 from services.analizador_llm import (
     AnalizadorCompatibleOpenAI,
+    armar_instrucciones,
     armar_pedido,
     crear_analizador,
     interpretar_respuesta,
@@ -151,3 +152,12 @@ def test_sin_informacion_el_llm_no_impone_categoria():
     assert resultado.proximo_paso.value == "CIERRE_POR_INFORMACION_INSUFICIENTE"
     assert resultado.solicitud_tipo is None
     assert plataformas["GASES DEL ORINOCO"].casos == []
+
+
+def test_instrucciones_con_la_excepcion_por_categoria():
+    instrucciones = armar_instrucciones(GASES)
+    assert "cuándo ocurrió" in instrucciones
+    assert (
+        "Si la categoría es Consulta informativa, basta con saber:\n"
+        "- qué necesita o pide el cliente"
+    ) in instrucciones

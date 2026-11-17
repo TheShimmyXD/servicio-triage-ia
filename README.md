@@ -247,13 +247,15 @@ plataforma:
 ```
 
 `GET /empresas` la lista de inmediato y sus casos salen como `SN-000001`. Opcionalmente,
-`informacion_minima` define qué elementos exige y frases propias para detectarlos, y
+`informacion_minima` define qué elementos exige, frases propias para detectarlos y, en
+`por_categoria`, lo que exige cada categoría que no siga la regla general; además,
 `proveedor_prioridad` dice quién decide la prioridad, y `plataforma` acepta `intentos` (3) y
 `espera_inicial_s` (0,2) para los reintentos de creación (ver los YAML existentes).
 
 **Agregar una categoría.** Sumarla a `categorias` (la descripción orienta al LLM y las
 palabras clave al respaldo por reglas), darle prioridad en `reglas_prioridad.por_categoria`
-y próximo paso en `delegaciones`.
+y próximo paso en `delegaciones`. Si es una consulta o un trámite, basta con
+`informacion_minima.por_categoria: {<nombre>: [que_necesita]}`.
 
 **Cambiar las reglas de prioridad.** Editar `por_defecto`, `por_categoria` o `senales`: una
 señal es una lista de frases que, si aparecen en el texto, suben la prioridad (nunca la
@@ -361,7 +363,11 @@ función del dominio:
 
 - **Información mínima:** qué pasó, cuándo y qué necesita, detectados por marcadores del
   español más las frases de cada empresa. Un texto de menos de 5 palabras se cierra siempre.
-  SALUD INTEGRAL DEL LLANO no exige «cuándo».
+  SALUD INTEGRAL DEL LLANO no exige «cuándo». Las consultas y los trámites (la consulta
+  informativa y la solicitud administrativa de GASES, el rastreo y el cambio de dirección de
+  MENSAJERIA, la consulta de planes de RED MOVIL y la cita médica de SALUD) solo exigen «qué
+  necesita»: una pregunta por horarios no cuenta un hecho con fecha. En un cierre,
+  `solicitud_tipo` sale `null`.
 - **Documento:** CC (el del ejemplo), CE, NIT, TI y PA, en `configuracion/tipos_documento.yaml`.
   Si hay varios, gana el primero.
 - **Estado:** `pendiente` en `GESTION_EXTERNA`, `cerrado` en los otros dos pasos y
@@ -393,7 +399,7 @@ En Windows: `.venv\Scripts\python -m pytest` y `.venv\Scripts\python -m ruff che
 GitHub Actions corre lo mismo (`ruff check`, `ruff format --check` y `pytest`) en cada cambio a
 `main`: `.github/workflows/pruebas.yml`.
 
-165 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
+173 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
 respuesta real de Groq guardada en `tests/fixtures/` comprueba el análisis de su formato.
 
 | Carpeta | Qué cubre |
