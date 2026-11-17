@@ -144,7 +144,7 @@ La estrategia es **híbrida**: el modelo de lenguaje interpreta el texto y las r
 
 Cada error trae un código legible (como `EMPRESA_NO_PARAMETRIZADA`) y un mensaje, descritos en el README.
 
-Para el monitoreo, el servicio deja en el log cada intento fallido contra una plataforma (con la empresa, la solicitud y el número de intento), cada llamada al modelo con su latencia y sus tokens, y cada documento que el modelo propuso pero no aparecía en el texto. Además, el endpoint `/metricas` informa por empresa cuántos casos se crearon, cuántos intentos fallaron, cuántos casos no se pudieron crear, cuántos duplicados y conflictos hubo y cuántas veces falló el modelo, y `/salud` indica si el servicio está arriba. El repositorio incluye 186 pruebas automáticas, organizadas por capa y sin acceso a red.
+Para el monitoreo, el servicio deja en el log cada intento fallido contra una plataforma (con la empresa, la solicitud y el número de intento), cada llamada al modelo con su latencia y sus tokens, y cada documento que el modelo propuso pero no aparecía en el texto. Además, el endpoint `/metricas` informa por empresa cuántos casos se crearon, cuántos intentos fallaron, cuántos casos no se pudieron crear, cuántos duplicados y conflictos hubo y cuántas veces falló el modelo, y `/salud` indica si el servicio está arriba. El repositorio incluye 198 pruebas automáticas, organizadas por capa y sin acceso a red.
 
 ## 6. Propuesta de despliegue en la nube
 
