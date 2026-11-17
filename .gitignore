@@ -1,0 +1,20 @@
+# Entorno local
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Secretos: la clave del LLM vive solo en .env
+.env
+.env.*
+!.env.example
+secure_credentials.json
+local_settings.json
+
+# Cachés y registros
+.pytest_cache/
+.ruff_cache/
+logs/
+*.log
