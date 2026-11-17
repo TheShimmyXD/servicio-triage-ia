@@ -13,3 +13,4 @@
 - Simulador del servicio de prioridad de MENSAJERIA DEL VALLE y su proveedor HTTP.
 - README con instalación, variables, ejemplos, extensión, manejo de errores y supuestos.
 - Documento técnico en `docs/` (PDF de 4 páginas) y su construcción desde Markdown.
+- README con la URL del repositorio en las instrucciones de instalación.

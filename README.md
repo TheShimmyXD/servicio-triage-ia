@@ -64,7 +64,7 @@ configurables, que son auditables y repetibles.
 En Linux o macOS:
 
 ```bash
-git clone <url-del-repositorio> servicio-triage-ia
+git clone https://github.com/TheShimmyXD/servicio-triage-ia.git
 cd servicio-triage-ia
 python3 -m venv .venv
 source .venv/bin/activate
@@ -76,7 +76,7 @@ En Windows (PowerShell). La política por defecto de Windows 11 no deja ejecutar
 `Activate.ps1`, así que se llama directamente al Python del entorno:
 
 ```powershell
-git clone <url-del-repositorio> servicio-triage-ia
+git clone https://github.com/TheShimmyXD/servicio-triage-ia.git
 cd servicio-triage-ia
 py -3.13 -m venv .venv
 .venv\Scripts\python -m pip install -e ".[dev]"
