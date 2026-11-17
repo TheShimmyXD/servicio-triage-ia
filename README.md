@@ -53,6 +53,7 @@ configurables, que son auditables y repetibles.
 | `configuracion/empresas/` | Un YAML por empresa. |
 | `simuladores/` | El servicio de prioridad de MENSAJERIA DEL VALLE, simulado. |
 | `tests/` | Pruebas por capa, sin red. |
+| `docs/` | Documento técnico (PDF) y su fuente en Markdown. |
 
 ## Requisitos e instalación
 
@@ -349,3 +350,15 @@ respuesta real de Groq guardada en `tests/fixtures/` comprueba el análisis de s
 | `tests/app/` | El caso de uso completo, los reintentos y el armado del servicio. |
 | `tests/entrypoints/` | La API: REQ-001, errores 404, 409 y 422, métricas. |
 | `tests/simuladores/` | El servicio de prioridad de MENSAJERIA DEL VALLE. |
+
+## Documento técnico
+
+`docs/documento_tecnico.pdf` explica la arquitectura, cómo crece con más empresas y
+categorías, la estrategia de IA, el manejo de errores y la propuesta de despliegue en la nube.
+Su fuente es `docs/documento_tecnico.md`; para regenerarlo hace falta Chrome o Chromium (si no
+está en el PATH, la variable `CHROME` indica la ruta del ejecutable):
+
+```bash
+pip install -e ".[docs]"
+python docs/construir_pdf.py
+```

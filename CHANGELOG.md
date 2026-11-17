@@ -12,3 +12,4 @@
 - Plataformas simuladas por registro, reintentos, `GET /metricas` y control de duplicados.
 - Simulador del servicio de prioridad de MENSAJERIA DEL VALLE y su proveedor HTTP.
 - README con instalación, variables, ejemplos, extensión, manejo de errores y supuestos.
+- Documento técnico en `docs/` (PDF de 4 páginas) y su construcción desde Markdown.

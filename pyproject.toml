@@ -22,6 +22,9 @@ dev = [
     "pytest~=9.2.0",
     "ruff~=0.17.5",
 ]
+docs = [
+    "Markdown~=3.11.3",
+]
 
 [tool.setuptools.packages.find]
 include = ["domain*", "services*", "app*", "entrypoints*"]
