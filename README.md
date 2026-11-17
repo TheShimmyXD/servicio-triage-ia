@@ -60,13 +60,26 @@ configurables, que son auditables y repetibles.
 - Una clave de Groq (gratuita en <https://console.groq.com/keys>). Sin clave el servicio
   funciona igual, solo con reglas.
 
+En Linux o macOS:
+
 ```bash
 git clone <url-del-repositorio> servicio-triage-ia
 cd servicio-triage-ia
 python3 -m venv .venv
-source .venv/bin/activate          # En Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -e ".[dev]"
-cp .env.example .env               # En Windows: copy .env.example .env
+cp .env.example .env
+```
+
+En Windows (PowerShell). La política por defecto de Windows 11 no deja ejecutar
+`Activate.ps1`, así que se llama directamente al Python del entorno:
+
+```powershell
+git clone <url-del-repositorio> servicio-triage-ia
+cd servicio-triage-ia
+py -3.13 -m venv .venv
+.venv\Scripts\python -m pip install -e ".[dev]"
+copy .env.example .env
 ```
 
 Luego se abre `.env` y se completa `GROQ_API_KEY`. El `.env` no se versiona.
@@ -96,6 +109,13 @@ uvicorn entrypoints.api.principal:aplicacion --port 8000
 
 # Servicio de prioridad de MENSAJERIA DEL VALLE (simulado)
 uvicorn simuladores.mensajeria_del_valle.servicio:aplicacion --port 8001
+```
+
+En Windows, las mismas órdenes con el Python del entorno:
+
+```powershell
+.venv\Scripts\python -m uvicorn entrypoints.api.principal:aplicacion --port 8000
+.venv\Scripts\python -m uvicorn simuladores.mensajeria_del_valle.servicio:aplicacion --port 8001
 ```
 
 El simulador es opcional: si no está arriba, MENSAJERIA DEL VALLE prioriza con sus reglas.
@@ -134,6 +154,17 @@ curl -s -X POST localhost:8000/solicitudes -H "Content-Type: application/json" -
   "justificacion": "Incidente técnico: \"Estufa comprada hace 2 semanas presenta fallas, no hace contacto con la llave del gas\". Prioridad Alta porque la solicitud menciona \"urgente\" (fuente: reglas de la empresa). Requiere gestión de la empresa (delegación externa).",
   "estado": "pendiente"
 }
+```
+
+En Windows (PowerShell), la misma solicitud:
+
+```powershell
+$cuerpo = @{
+  compania = "GASES DEL ORINOCO"
+  solicitud_id = "REQ-001"
+  solicitud_descripcion = "Mi nombre es Juana y mi numero de cédula es 102045678 . Solicito una revision urgente porque la estufa qué compre hace 2 semanas con la empresa presenta fallas (no está haciendo contacto con la llave del gas) "
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri http://localhost:8000/solicitudes -ContentType "application/json; charset=utf-8" -Body ([Text.Encoding]::UTF8.GetBytes($cuerpo))
 ```
 
 Una por empresa:
@@ -306,7 +337,9 @@ pytest
 ruff check .
 ```
 
-133 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
+En Windows: `.venv\Scripts\python -m pytest` y `.venv\Scripts\python -m ruff check .`
+
+134 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
 respuesta real de Groq guardada en `tests/fixtures/` comprueba el análisis de su formato.
 
 | Carpeta | Qué cubre |

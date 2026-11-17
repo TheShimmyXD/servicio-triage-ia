@@ -28,14 +28,28 @@ from entrypoints.api.esquemas import (
 registro = logging.getLogger(__name__)
 
 
+class RespuestaJSON(JSONResponse):
+    """JSON que declara su charset.
+
+    Sin charset, PowerShell 5.1 (el de Windows 11) decodifica la respuesta como Latin-1 y
+    daña las tildes: "técnico" llega con dos caracteres raros en lugar de la é.
+    """
+
+    media_type = "application/json; charset=utf-8"
+
+
 def _respuesta_error(estado_http: int, error: SalidaError) -> JSONResponse:
-    return JSONResponse(status_code=estado_http, content=error.model_dump(exclude_none=True))
+    return RespuestaJSON(status_code=estado_http, content=error.model_dump(exclude_none=True))
 
 
 def crear_aplicacion(triage: CasoDeUsoTriage | None = None) -> FastAPI:
     """Arma la API. Las pruebas inyectan su caso de uso; uvicorn usa la configuración real."""
     caso_de_uso = triage or construir_triage()
-    aplicacion = FastAPI(title="Servicio de triage de solicitudes", version="0.1.0")
+    aplicacion = FastAPI(
+        title="Servicio de triage de solicitudes",
+        version="0.1.0",
+        default_response_class=RespuestaJSON,
+    )
 
     @aplicacion.exception_handler(EmpresaNoParametrizada)
     def _empresa_no_parametrizada(_: Request, error: EmpresaNoParametrizada) -> JSONResponse:

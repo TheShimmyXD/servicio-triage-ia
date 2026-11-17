@@ -52,6 +52,14 @@ def test_req_001_devuelve_el_contrato_completo(cliente):
     assert cuerpo["estado"] == "pendiente"
 
 
+def test_las_respuestas_declaran_utf8(cliente):
+    # Clientes como PowerShell 5.1 leen Latin-1 si el charset no viene en el encabezado.
+    exito = cliente.post("/solicitudes", json=EJEMPLO_REQ_001)
+    error = cliente.post("/solicitudes", json={**EJEMPLO_REQ_001, "compania": "OTRA"})
+    for respuesta in (exito, error, cliente.get("/empresas"), cliente.get("/metricas")):
+        assert respuesta.headers["content-type"] == "application/json; charset=utf-8"
+
+
 def test_nombre_de_empresa_sin_importar_mayusculas_ni_espacios(cliente):
     entrada = {**EJEMPLO_REQ_001, "compania": "  gases   del orinoco "}
     respuesta = cliente.post("/solicitudes", json=entrada)
