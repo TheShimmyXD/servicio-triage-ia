@@ -145,6 +145,8 @@ def test_si_el_servicio_del_cliente_falla_se_usan_las_reglas():
     assert resultado.solicitud_prioridad is Prioridad.MEDIA
     assert "no se usó el servicio de prioridad del cliente" in resultado.justificacion
     assert "reglas de la empresa" in resultado.justificacion
+    metricas = caso_de_uso.metricas
+    assert metricas.contar(Evento.PRIORIDAD_EXTERNA_FALLIDA, "MENSAJERIA DEL VALLE") == 1
 
 
 def test_plataforma_caida_responde_con_estado_y_motivo():

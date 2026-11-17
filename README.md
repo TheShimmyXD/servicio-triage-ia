@@ -132,7 +132,7 @@ La documentación interactiva queda en <http://localhost:8000/docs>.
 |---|---|
 | `POST /solicitudes` | El triage de una solicitud. |
 | `GET /empresas` | Las empresas parametrizadas. |
-| `GET /metricas` | Contadores por empresa: casos creados, fallas de plataforma, duplicados, LLM caído. |
+| `GET /metricas` | Contadores por empresa: casos creados, fallas de plataforma, duplicados, LLM caído, servicio de prioridad caído. |
 | `GET /salud` | `{"estado": "ok"}`. |
 
 ### Con Docker
@@ -291,7 +291,7 @@ una empresa (también existe `probabilidad_falla`, de 0 a 1) y se reinicia el se
 ```json
 {"casos_creados": {}, "intentos_fallidos_plataforma": {"GASES DEL ORINOCO": 3},
  "casos_no_creados": {"GASES DEL ORINOCO": 1}, "duplicados_devueltos": {},
- "conflictos_de_id": {}, "llm_fallidos": {}}
+ "conflictos_de_id": {}, "llm_fallidos": {}, "prioridad_externa_fallidos": {}}
 ```
 
 **Casos duplicados.** La clave es la empresa más el `solicitud_id`. Si llega de nuevo con el

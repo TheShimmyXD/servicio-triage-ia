@@ -1,8 +1,8 @@
 """Contadores de eventos por empresa, consultables en GET /metricas.
 
 Sirven para vigilar lo que el triage absorbe sin caerse (fallas de plataforma, LLM caído,
-duplicados). En la nube los mismos eventos van a métricas del proveedor con alarmas;
-aquí viven en memoria del proceso y se reinician con él.
+servicio de prioridad del cliente caído, duplicados). En la nube los mismos eventos van a
+métricas del proveedor con alarmas; aquí viven en memoria del proceso y se reinician con él.
 """
 
 from __future__ import annotations
@@ -21,6 +21,8 @@ class Evento(StrEnum):
     CONFLICTO = "conflictos_de_id"
     LLM_FALLIDO = "llm_fallidos"
     """El LLM falló o respondió fuera del esquema; atendieron las reglas."""
+    PRIORIDAD_EXTERNA_FALLIDA = "prioridad_externa_fallidos"
+    """El servicio de prioridad del cliente no respondió; la prioridad salió de las reglas."""
 
 
 class Metricas:

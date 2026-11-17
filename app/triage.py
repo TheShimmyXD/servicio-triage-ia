@@ -242,6 +242,7 @@ class CasoDeUsoTriage:
         try:
             prioridad = proveedor.obtener(empresa, documento, categoria)
         except ErrorProveedorPrioridad as error:
+            self.metricas.sumar(Evento.PRIORIDAD_EXTERNA_FALLIDA, empresa.nombre)
             registro.warning(
                 "proveedor_prioridad_fallo empresa=%s motivo=%s", empresa.nombre, error
             )
