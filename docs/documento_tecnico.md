@@ -125,10 +125,10 @@ La estrategia es **híbrida**: el modelo de lenguaje interpreta el texto y las r
 
 **Controles sobre la respuesta del modelo.**
 
-- Toda respuesta se valida contra el esquema. Si el modelo no contesta, tarda demasiado o devuelve algo que no cumple, ese paso se resuelve con las reglas de la empresa y se cuenta como falla del modelo en las métricas. Quien llama recibe siempre la misma forma de respuesta.
+- Toda respuesta se valida contra el esquema. Si el modelo no contesta, tarda o no cumple, resuelven las reglas de la empresa, se cuenta como falla en las métricas y la respuesta conserva su forma.
 - El número de documento que propone el modelo solo se acepta si aparece en el texto original; si no, se extrae con reglas. Así, un número inventado nunca llega a la plataforma del cliente.
 
-**En producción.** El texto de los clientes sale hacia el proveedor del modelo: conviene uno con acuerdo de tratamiento de datos o un modelo servido en la nube de la compañía. El adaptador sirve para cualquier API compatible con OpenAI.
+**En producción.** El texto de los clientes sale hacia el proveedor del modelo: conviene uno con acuerdo de tratamiento de datos o servido en la nube de la compañía, y enmascarar la cédula antes del envío (Ley 1581 de 2012), pues las reglas ya la extraen del texto. El adaptador sirve para cualquier API compatible con OpenAI.
 
 ## 5. Manejo de errores y monitoreo
 

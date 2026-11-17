@@ -181,6 +181,18 @@ def test_duplicados_simultaneos_crean_un_solo_caso():
     assert plataformas["GASES DEL ORINOCO"].llamadas == 1
 
 
+def test_los_candados_no_se_acumulan():
+    caso_de_uso, _ = _armar()
+    solicitudes = [Solicitud("GASES DEL ORINOCO", f"REQ-{n % 20}", TEXTO_JUANA) for n in range(80)]
+    with ThreadPoolExecutor(max_workers=8) as hilos:
+        list(hilos.map(caso_de_uso.ejecutar, solicitudes))
+    # 20 claves atendidas, 4 veces cada una y en paralelo: al terminar no queda ninguna.
+    assert caso_de_uso._candados == {}
+    with pytest.raises(SolicitudEnConflicto):
+        caso_de_uso.ejecutar(Solicitud("GASES DEL ORINOCO", "REQ-1", TEXTO_INCOMPLETO))
+    assert caso_de_uso._candados == {}
+
+
 def test_mismo_id_con_otro_texto_es_conflicto():
     caso_de_uso, plataformas = _armar()
     caso_de_uso.ejecutar(REQ_001)

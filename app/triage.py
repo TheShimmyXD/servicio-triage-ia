@@ -12,7 +12,8 @@ import logging
 import re
 import threading
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import date
 
@@ -56,6 +57,13 @@ TIPOS_DOCUMENTO = frozenset({"CC", "CE", "NIT", "TI", "PA"})
 
 
 @dataclass
+class _CandadoCompartido:
+    candado: threading.Lock = field(default_factory=threading.Lock)
+    usuarios: int = 0
+    """Solicitudes con esta clave que esperan o tienen el candado."""
+
+
+@dataclass
 class CasoDeUsoTriage:
     """Se arma una vez al arrancar (app/composicion) y atiende todas las solicitudes."""
 
@@ -71,7 +79,8 @@ class CasoDeUsoTriage:
     metricas: Metricas = field(default_factory=Metricas)
     dormir: Callable[[float], None] = time.sleep
     """Las pruebas lo reemplazan para no esperar los reintentos."""
-    _candados: dict[tuple[str, str], threading.Lock] = field(default_factory=dict, init=False)
+    _candados: dict[tuple[str, str], _CandadoCompartido] = field(default_factory=dict, init=False)
+    """Solo las claves en curso: cada candado se borra cuando nadie lo usa."""
     _candado_general: threading.Lock = field(default_factory=threading.Lock, init=False)
 
     def ejecutar(self, solicitud: Solicitud) -> ResultadoTriage:
@@ -79,7 +88,7 @@ class CasoDeUsoTriage:
         empresa = self.catalogo.obtener(solicitud.compania)
         clave = (empresa.nombre, solicitud.solicitud_id)
         # Dos envíos simultáneos de la misma solicitud no deben crear dos casos.
-        with self._candado_de(clave):
+        with self._exclusivo(clave):
             previa = self.repositorio.obtener(*clave)
             accion = decidir_ante_duplicado(previa, solicitud.solicitud_descripcion)
             if accion is AccionAnteDuplicado.CONFLICTO:
@@ -95,9 +104,20 @@ class CasoDeUsoTriage:
             self.repositorio.guardar(*clave, SolicitudAtendida(texto, resultado))
             return resultado
 
-    def _candado_de(self, clave: tuple[str, str]) -> threading.Lock:
+    @contextmanager
+    def _exclusivo(self, clave: tuple[str, str]) -> Iterator[None]:
         with self._candado_general:
-            return self._candados.setdefault(clave, threading.Lock())
+            compartido = self._candados.setdefault(clave, _CandadoCompartido())
+            compartido.usuarios += 1
+        try:
+            with compartido.candado:
+                yield
+        finally:
+            # Sin esto el diccionario crecería con cada solicitud atendida.
+            with self._candado_general:
+                compartido.usuarios -= 1
+                if compartido.usuarios == 0:
+                    del self._candados[clave]
 
     def _triar(self, empresa: ConfiguracionEmpresa, solicitud: Solicitud) -> ResultadoTriage:
         texto = solicitud.solicitud_descripcion
