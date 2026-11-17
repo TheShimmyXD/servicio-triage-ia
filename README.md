@@ -372,7 +372,7 @@ En Windows: `.venv\Scripts\python -m pytest` y `.venv\Scripts\python -m ruff che
 GitHub Actions corre lo mismo (`ruff check`, `ruff format --check` y `pytest`) en cada cambio a
 `main`: `.github/workflows/pruebas.yml`.
 
-146 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
+155 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
 respuesta real de Groq guardada en `tests/fixtures/` comprueba el análisis de su formato.
 
 | Carpeta | Qué cubre |
@@ -399,7 +399,7 @@ plan gratuito de Groq limita las solicitudes por minuto. Resultado del 2026-11-1
 | Modo | Categoría | Información mínima | Próximo paso | Latencia mediana |
 |---|---|---|---|---|
 | Reglas | 11/24 (46 %) | 12/32 (38 %) | 12/32 (38 %) | 0,2 ms |
-| LLM (`openai/gpt-oss-20b`) | 24/24 (100 %) | 32/32 (100 %) | 32/32 (100 %) | 823 ms |
+| LLM (`openai/gpt-oss-20b`) | 24/24 (100 %) | 32/32 (100 %) | 32/32 (100 %) | 0,8-1 s (3 corridas) |
 
 Las reglas son el respaldo: ante la duda cierran por información insuficiente en vez de adivinar.
 
