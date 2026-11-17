@@ -1,0 +1,54 @@
+# MENSAJERIA DEL VALLE: empresa del bono del enunciado. Entrega un microservicio que
+# devuelve la prioridad a partir de tipo_documento, numero_documento_cliente y
+# tipo_solicitud. Si no responde, se usan las reglas de abajo. Categorías y reglas:
+# supuesto (mensajería y paquetería).
+nombre: MENSAJERIA DEL VALLE
+
+categorias:
+  - nombre: Envío retrasado
+    descripcion: El paquete no ha llegado en el plazo prometido o está detenido.
+    palabras_clave: [retraso, no ha llegado, no llego, demora, detenido, plazo]
+  - nombre: Paquete dañado o perdido
+    descripcion: El envío llegó roto, abierto, incompleto o se extravió.
+    palabras_clave: [danado, roto, perdido, extraviado, abierto, incompleto, faltante]
+  - nombre: Consulta de rastreo
+    descripcion: El cliente pregunta dónde está su envío o cuándo llega.
+    palabras_clave: [rastreo, guia, donde esta, seguimiento, cuando llega]
+  - nombre: Cambio de dirección
+    descripcion: Cambiar la dirección o la fecha de entrega de un envío en curso.
+    palabras_clave: [cambio de direccion, cambiar la direccion, otra direccion,
+                     reprogramar entrega]
+
+reglas_prioridad:
+  por_defecto: Baja
+  por_categoria:
+    Envío retrasado: Media
+    Paquete dañado o perdido: Alta
+    Consulta de rastreo: Baja
+    Cambio de dirección: Media
+  senales:
+    - prioridad: Alta
+      frases: [urgente, medicamento, documentos legales, perecedero]
+
+delegaciones:
+  Envío retrasado: GESTION_EXTERNA
+  Paquete dañado o perdido: GESTION_EXTERNA
+  Consulta de rastreo: RESPUESTA_DIRECTA
+  Cambio de dirección: RESPUESTA_DIRECTA
+
+informacion_minima:
+  requeridos: [que_paso, cuando, que_necesita]
+  frases_extra:
+    que_paso: [no ha llegado, no llego, llego roto]
+
+plataforma:
+  nombre: salesforce_simulada
+  parametros:
+    prefijo: SF
+
+# Servicio de prioridad del cliente (simulado en simuladores/mensajeria_del_valle).
+proveedor_prioridad:
+  tipo: http
+  url: http://127.0.0.1:8001/prioridad
+  timeout_s: 2
+  reintentos: 2

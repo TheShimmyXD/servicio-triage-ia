@@ -1,0 +1,48 @@
+# RED MOVIL ANDINA: empresa ficticia de telecomunicaciones (supuesto). Muestra frases
+# propias del sector para la información mínima y una plataforma distinta.
+nombre: RED MOVIL ANDINA
+
+categorias:
+  - nombre: Falla de servicio
+    descripcion: Sin señal, sin internet, llamadas que se caen o velocidad muy baja.
+    palabras_clave: [sin senal, sin internet, se cae, lento, no tengo servicio, caida]
+  - nombre: Reclamo de facturación
+    descripcion: Cobros no reconocidos, dobles o de servicios no contratados.
+    palabras_clave: [factura, cobro, cobraron, no contrate, plan]
+  - nombre: Portabilidad
+    descripcion: Traer o llevar un número a otro operador.
+    palabras_clave: [portabilidad, portar, cambiar de operador]
+  - nombre: Consulta de planes
+    descripcion: Preguntas sobre planes, precios, cobertura o promociones.
+    palabras_clave: [plan, planes, precio, cobertura, promocion]
+
+reglas_prioridad:
+  por_defecto: Baja
+  por_categoria:
+    Falla de servicio: Media
+    Reclamo de facturación: Media
+    Portabilidad: Media
+    Consulta de planes: Baja
+  senales:
+    - prioridad: Alta
+      frases: [urgente, empresa sin servicio, todos los clientes, emergencia,
+               teletrabajo]
+
+delegaciones:
+  Falla de servicio: GESTION_EXTERNA
+  Reclamo de facturación: GESTION_EXTERNA
+  Portabilidad: GESTION_EXTERNA
+  Consulta de planes: RESPUESTA_DIRECTA
+
+informacion_minima:
+  requeridos: [que_paso, cuando, que_necesita]
+  frases_extra:
+    que_paso: [sin senal, sin internet, se cae la llamada, se caen las llamadas]
+
+plataforma:
+  nombre: freshdesk_simulada
+  parametros:
+    prefijo: FD
+
+proveedor_prioridad:
+  tipo: reglas

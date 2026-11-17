@@ -1,0 +1,48 @@
+# SALUD INTEGRAL DEL LLANO: empresa ficticia de salud (supuesto). Exige solo qué pasó y
+# qué necesita: una solicitud de cita o autorización rara vez dice cuándo.
+nombre: SALUD INTEGRAL DEL LLANO
+
+categorias:
+  - nombre: Autorización de procedimiento
+    descripcion: Autorizar exámenes, cirugías, terapias o procedimientos ordenados.
+    palabras_clave: [autorizacion, autorizar, orden medica, examen, cirugia, terapia]
+  - nombre: Medicamentos
+    descripcion: Entrega pendiente o incompleta de medicamentos formulados.
+    palabras_clave: [medicamento, medicamentos, formula, farmacia, droga]
+  - nombre: Queja por atención
+    descripcion: Mala atención, demoras o trato inadecuado en una sede o consulta.
+    palabras_clave: [queja, mala atencion, trato, demora, me atendieron]
+  - nombre: Cita médica
+    descripcion: Pedir, cambiar o cancelar una cita de medicina general o especialista.
+    palabras_clave: [cita, agendar, especialista, medicina general, cancelar cita]
+
+reglas_prioridad:
+  por_defecto: Baja
+  por_categoria:
+    Autorización de procedimiento: Media
+    Medicamentos: Media
+    Queja por atención: Media
+    Cita médica: Baja
+  senales:
+    - prioridad: Alta
+      frases: [urgente, urgencias, dolor fuerte, sangrado, embarazo, cancer,
+               oncologia, dialisis, tutela]
+
+delegaciones:
+  Autorización de procedimiento: GESTION_EXTERNA
+  Medicamentos: GESTION_EXTERNA
+  Queja por atención: GESTION_EXTERNA
+  Cita médica: RESPUESTA_DIRECTA
+
+informacion_minima:
+  requeridos: [que_paso, que_necesita]
+  frases_extra:
+    que_paso: [no me han entregado, no me autorizan, me negaron, formularon]
+
+plataforma:
+  nombre: jira_service_simulada
+  parametros:
+    prefijo: JSM
+
+proveedor_prioridad:
+  tipo: reglas

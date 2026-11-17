@@ -1,0 +1,55 @@
+# GASES DEL ORINOCO: empresa del ejemplo del enunciado (distribución de gas).
+# Del enunciado: el nombre, la categoría "Incidente técnico" y que una falla de estufa
+# con "urgente" es Alta y gestión externa. Lo demás es supuesto.
+nombre: GASES DEL ORINOCO
+
+categorias:
+  - nombre: Incidente técnico
+    descripcion: >-
+      Falla de un gasodoméstico, del medidor o de la red de gas que requiere visita
+      técnica (fugas, olor a gas, artefactos que no encienden o no hacen contacto).
+    palabras_clave: [falla, fallas, fuga, olor a gas, huele a gas, estufa, calentador,
+                     medidor, no enciende, no prende, contacto, llave del gas, escape]
+  - nombre: Reclamo de facturación
+    descripcion: Cobros que el cliente considera errados, dobles o fuera de su consumo.
+    palabras_clave: [factura, cobro, cobraron, cobro doble, consumo, valor, tarifa]
+  - nombre: Consulta informativa
+    descripcion: Preguntas sobre horarios, puntos de pago, tarifas vigentes o trámites.
+    palabras_clave: [horario, punto de pago, informacion, consulta, como puedo, donde]
+  - nombre: Solicitud administrativa
+    descripcion: Cambio de titular, certificados, paz y salvo o actualización de datos.
+    palabras_clave: [certificado, paz y salvo, cambio de titular, actualizar datos,
+                     duplicado de factura]
+
+reglas_prioridad:
+  por_defecto: Baja
+  por_categoria:
+    Incidente técnico: Media
+    Reclamo de facturación: Media
+    Consulta informativa: Baja
+    Solicitud administrativa: Baja
+  senales:
+    - prioridad: Alta
+      frases: [urgente, fuga, olor a gas, huele a gas, riesgo, peligro, explosion,
+               emergencia, intoxicacion]
+    - prioridad: Media
+      frases: [sin servicio, cobro doble]
+
+# Delegaciones del contrato: qué resuelve el BPO y qué pasa a la empresa.
+delegaciones:
+  Incidente técnico: GESTION_EXTERNA
+  Reclamo de facturación: GESTION_EXTERNA
+  Consulta informativa: RESPUESTA_DIRECTA
+  Solicitud administrativa: RESPUESTA_DIRECTA
+
+# Los tres elementos del paso 1 del enunciado.
+informacion_minima:
+  requeridos: [que_paso, cuando, que_necesita]
+
+plataforma:
+  nombre: zendesk_simulada
+  parametros:
+    prefijo: ZD
+
+proveedor_prioridad:
+  tipo: reglas
