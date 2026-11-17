@@ -339,6 +339,13 @@ seguidas (`LLM_FALLAS_PARA_ABRIR`) se abre un cortocircuito: durante 30 s
 (`LLM_PAUSA_CORTOCIRCUITO_S`) se usan las reglas sin llamar al LLM, así una caída del proveedor
 no suma el timeout a cada solicitud. Luego una llamada de prueba decide si se cierra.
 
+El plan gratuito de Groq limita los tokens por minuto: una ráfaga (en una prueba, 16
+solicitudes en unos 10 s) recibe HTTP 429 y esas solicitudes se resuelven con reglas, que
+aciertan menos (ver «Exactitud del triage»). El log dice de dónde salió cada clasificación
+(`triage ... fuente=llm` o `fuente=reglas`) y el motivo de cada falla
+(`llm_fallo ... motivo=HTTP 429`). Para ver el LLM en acción conviene espaciar las solicitudes
+unos segundos o usar un plan con más cupo.
+
 **El servicio de prioridad del cliente no responde.** Se reintenta según su YAML y luego se
 prioriza con las reglas; la justificación dice por qué. Cada empresa tiene su propio
 cortocircuito: tras `fallas_para_abrir` (3) consultas seguidas sin respuesta, durante `pausa_s`
@@ -376,7 +383,8 @@ función del dominio:
   necesita»: una pregunta por horarios no cuenta un hecho con fecha. En un cierre,
   `solicitud_tipo` sale `null`.
 - **Documento:** CC (el del ejemplo), CE, NIT, TI y PA, en `configuracion/tipos_documento.yaml`.
-  Si hay varios, gana el primero.
+  Si hay varios, gana el primero. La sigla TI sin puntos cuenta solo si la sigue el número
+  («TI 1012345678»); en «a ti» o «para ti» no es un documento.
 - **Estado:** `pendiente` en `GESTION_EXTERNA`, `cerrado` en los otros dos pasos y
   `error_plataforma` si el caso no se pudo crear.
 - **Cierre por notificación de la empresa (fuera del alcance):** el paso 6 termina cuando la
@@ -386,7 +394,9 @@ función del dominio:
   plataforma en una cola) que verifique que la solicitud existe y está `pendiente`, la pase a
   `cerrado` y guarde el motivo y quién lo dio, a través del mismo puerto de almacenamiento.
 - **Prioridad:** base por categoría y la señal más fuerte del texto; una señal nunca la baja.
-- **Justificación:** el hecho de la solicitud (sin números de documento), la prioridad con su
+  Entre las palabras de una señal caben hasta dos más, en orden: «huele muchísimo a gas»
+  cuenta como «huele a gas».
+- **Justificación:** el hecho de la solicitud (sin números de documento; los montos como «$89.900» se conservan), la prioridad con su
   motivo y su fuente, y el paso. En el cierre, «Información incompleta o faltante». El hecho
   va entre comillas, así que el del LLM solo se cita si sale del texto: hasta 200 caracteres
   y cada palabra de 4 letras o más presente en la descripción. Si no cumple (paráfrasis o

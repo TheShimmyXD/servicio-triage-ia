@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 from domain.contrato import Prioridad
-from domain.prioridad import FUENTE_REGLAS, calcular_prioridad
+from domain.prioridad import FUENTE_REGLAS, ReglasPrioridad, SenalPrioridad, calcular_prioridad
 from tests.domain.datos import REGLAS_GAS, TEXTO_JUANA
+
+REGLAS_GAS_OLOR = ReglasPrioridad(
+    por_defecto=Prioridad.BAJA,
+    por_categoria={"Incidente técnico": Prioridad.MEDIA},
+    senales=(SenalPrioridad(Prioridad.ALTA, ("huele a gas",)),),
+)
 
 
 def test_juana_sube_a_alta_por_urgente():
@@ -37,3 +43,16 @@ def test_senal_solo_con_palabra_completa():
     # "riesgos" contiene "riesgo" pero no es la misma palabra; la regla es exacta.
     decision = calcular_prioridad("Consulta", "consulto por los riesgosos", REGLAS_GAS)
     assert decision.prioridad is Prioridad.BAJA
+
+
+def test_la_senal_admite_palabras_intercaladas():
+    texto = "Desde esta mañana huele muchísimo a gas en la cocina, que vengan ya"
+    decision = calcular_prioridad("Incidente técnico", texto, REGLAS_GAS_OLOR)
+    assert decision.prioridad is Prioridad.ALTA
+    assert "huele muchisimo a gas" in decision.motivo
+
+
+def test_la_senal_no_junta_palabras_lejanas():
+    texto = "Huele raro el patio y dicen que el gas sube de precio"
+    decision = calcular_prioridad("Incidente técnico", texto, REGLAS_GAS_OLOR)
+    assert decision.prioridad is Prioridad.MEDIA

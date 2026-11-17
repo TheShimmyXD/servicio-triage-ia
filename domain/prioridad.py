@@ -12,6 +12,10 @@ from dataclasses import dataclass, field
 from domain.contrato import Prioridad
 from domain.texto import normalizar, patron_de_frases
 
+# Una señal escrita "huele a gas" debe reconocer "huele muchísimo a gas": la gente
+# intercala adverbios. Más de dos palabras en medio ya junta frases sin relación.
+_HOLGURA_SENALES = 2
+
 FUENTE_REGLAS = "reglas de la empresa"
 
 
@@ -56,7 +60,7 @@ def calcular_prioridad(
     for senal in sorted(reglas.senales, key=lambda s: s.prioridad.peso, reverse=True):
         if senal.prioridad.peso <= prioridad.peso:
             break
-        patron = patron_de_frases(senal.frases)
+        patron = patron_de_frases(senal.frases, _HOLGURA_SENALES)
         coincidencia = patron.search(normalizado) if patron else None
         if coincidencia:
             prioridad = senal.prioridad

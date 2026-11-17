@@ -121,3 +121,15 @@ def test_categoria_que_solo_exige_que_necesita_controla_ese_elemento():
 def test_si_solo_se_exige_cuando_no_hay_control():
     solo_cuando = frozenset({ElementoMinimo.CUANDO})
     assert reglas_respaldan_suficiencia(TEXTO_INYECCION, solo_cuando, None, None)
+
+
+def test_la_cita_conserva_los_montos_y_oculta_el_documento():
+    hecho = extraer_hecho_principal(
+        "CE 456789. En la factura me cobraron dos veces el plan, $89.900 de más."
+    )
+    assert hecho is not None
+    assert "$89.900" in hecho
+    assert "456789" not in hecho
+    assert extraer_hecho_principal("Con CC 102045678 tengo una fuga en el contador") == (
+        "Con CC [documento] tengo una fuga en el contador"
+    )

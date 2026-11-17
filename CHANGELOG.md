@@ -25,3 +25,5 @@
   se cierra y se cuenta en `llm_suficiencia_no_respaldada`.
 - Conjunto de evaluación con 38 solicitudes (consultas naturales e inyecciones) y cifras nuevas.
 - El cierre por notificación de la empresa queda declarado fuera del alcance, con su diseño.
+- Señales de prioridad con hasta dos palabras intercaladas, TI sin puntos, montos sin
+  ocultar en la cita y aviso del límite por minuto de Groq.

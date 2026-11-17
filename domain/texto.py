@@ -28,14 +28,22 @@ def normalizar_nombre(nombre: str) -> str:
     return _ESPACIOS.sub(" ", quitar_tildes(nombre).upper()).strip()
 
 
-def patron_de_frases(frases: tuple[str, ...] | list[str]) -> re.Pattern[str] | None:
+def patron_de_frases(
+    frases: tuple[str, ...] | list[str], holgura: int = 0
+) -> re.Pattern[str] | None:
     """Compila frases en un patrón que solo acepta palabras completas.
 
     Las frases se normalizan antes, así una regla escrita "fuga de gás" encuentra
-    "FUGA DE GAS". Devuelve None si no hay frases.
+    "FUGA DE GAS". Con holgura, entre dos palabras de la frase caben hasta esa cantidad
+    de palabras ajenas, en el mismo orden: "huele a gas" encuentra "huele muchísimo a
+    gas". Devuelve None si no hay frases.
     """
     limpias = sorted({normalizar(f) for f in frases if f.strip()}, key=len, reverse=True)
     if not limpias:
         return None
+    if holgura > 0:
+        separador = rf"\W+(?:\w+\W+){{0,{holgura}}}"
+        alternativas = "|".join(separador.join(re.escape(p) for p in f.split(" ")) for f in limpias)
+        return re.compile(rf"(?<!\w)(?:{alternativas})(?!\w)")
     alternativas = "|".join(re.escape(f) for f in limpias)
     return re.compile(rf"(?<!\w)(?:{alternativas})(?!\w)")

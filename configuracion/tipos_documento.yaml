@@ -21,7 +21,8 @@ tipos:
     formato: con_digito_verificacion
   - codigo: TI
     nombre: tarjeta de identidad
-    etiqueta: 'tarjeta de identidad|\bt\.\s?i\b\.?'
+    # "TI" sola solo si la sigue el número: "para ti" o "a ti" no son un documento.
+    etiqueta: 'tarjeta de identidad|\bt\.\s?i\b\.?|(?<!\ba )(?<!\bde )(?<!\ben )(?<!para )(?<!por )\bti\b(?=\W{0,3}(?:no\W{0,3})?\d)'
   - codigo: PA
     nombre: pasaporte
     etiqueta: 'pasaporte'

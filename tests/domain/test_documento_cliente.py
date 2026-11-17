@@ -23,6 +23,9 @@ def test_juana_da_cedula_con_su_numero():
             DocumentoCliente("NIT", "900123456-7"),
         ),
         ("Tarjeta de identidad 1001234567 de mi hijo", DocumentoCliente("TI", "1001234567")),
+        ("Necesito una cita, TI 1012345678", DocumentoCliente("TI", "1012345678")),
+        ("Mi hija, TI No. 1012345678", DocumentoCliente("TI", "1012345678")),
+        ("Gracias a ti 3001234567 es mi celular", None),  # "ti" pronombre, no documento
         ("Pasaporte AB123456, extranjero", DocumentoCliente("PA", "AB123456")),
     ],
 )

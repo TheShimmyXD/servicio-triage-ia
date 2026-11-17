@@ -125,7 +125,11 @@ def reglas_respaldan_suficiencia(
 
 _SEPARADOR_ORACIONES = re.compile(r"(?<=[.!?\n])\s+|\s+\.(?=\s|$)")
 _CONECTOR_CAUSA = re.compile(r"\b(?:porque|ya que|debido a que|pues)\b", re.IGNORECASE)
-_NUMERO_LARGO = re.compile(r"\d[\d.\-]{4,}\d")
+# Números largos (documentos) que se ocultan en la cita. Un monto ("$89.900",
+# "89.900 pesos") no es un documento: se conserva para no alterar lo que dijo el cliente.
+_NUMERO_LARGO = re.compile(
+    r"(?<![\d$.\-])(?<!\$ )\d[\d.\-]{4,}\d(?!\d)(?!\s*(?:pesos|cop)\b)", re.I
+)
 _MAX_CARACTERES_HECHO = 160
 
 
