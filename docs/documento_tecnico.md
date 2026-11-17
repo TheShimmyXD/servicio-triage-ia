@@ -117,9 +117,9 @@ Hay además límites menores: la configuración se lee al arrancar, así que un 
 
 La estrategia es **híbrida**: el modelo de lenguaje interpreta el texto y las reglas de configuración toman las decisiones de negocio.
 
-**Qué hace el modelo.** Lee la descripción y devuelve una respuesta estructurada que debe cumplir un esquema JSON estricto: la categoría (solo puede elegir entre las de la empresa), si la información es suficiente, los hechos de la solicitud y el tipo y número del documento del cliente. Se usa gpt-oss-20b, un modelo abierto servido por Groq, porque admite ese tipo de salida estricta y responde rápido y a bajo costo. Cambiarlo es cuestión de configuración.
+**Qué hace el modelo.** Lee la descripción y devuelve una respuesta estructurada que debe cumplir un esquema JSON estricto: la categoría (solo puede elegir entre las de la empresa), si la información es suficiente, los hechos de la solicitud y el tipo y número del documento del cliente. Se usa gpt-oss-20b, un modelo abierto servido por Groq, por su salida estricta, su velocidad y su bajo costo; cambiarlo es configuración.
 
-**Por qué un modelo y no solo reglas.** Las solicitudes llegan en texto libre, con errores y con muchas formas de decir lo mismo, algo que una lista de palabras no cubre. Entrenar un clasificador propio tampoco sirve: no hay datos etiquetados y habría que reentrenarlo con cada empresa o categoría nueva. El modelo, en cambio, recibe las categorías y sus descripciones en cada petición.
+**Por qué un modelo y no solo reglas.** Las solicitudes llegan en texto libre, con errores y muchas formas de decir lo mismo; un clasificador propio exigiría datos etiquetados y reentrenarlo con cada empresa nueva, mientras que el modelo recibe las categorías en cada petición. Sobre 32 solicitudes etiquetadas (8 por empresa, carpeta `evaluacion/`), el modelo acertó la categoría en 24 de 24 y el próximo paso en 32 de 32, con una mediana de 0,8 s; las reglas solas, en 11 de 24 y 12 de 32, porque ante la duda cierran por falta de información. El conjunto es pequeño y no viene de clientes reales: ampliarlo con casos reales es el paso siguiente.
 
 **Por qué las decisiones no las toma el modelo.** La prioridad, el próximo paso y el estado salen de reglas porque forman parte del acuerdo con cada empresa: tienen que ser deterministas, auditables y repetibles, y no pueden depender de que un proveedor externo responda.
 
@@ -128,7 +128,7 @@ La estrategia es **híbrida**: el modelo de lenguaje interpreta el texto y las r
 - Toda respuesta se valida contra el esquema. Si el modelo no contesta, tarda demasiado o devuelve algo que no cumple, ese paso se resuelve con las reglas de la empresa y se cuenta como falla del modelo en las métricas. Quien llama recibe siempre la misma forma de respuesta.
 - El número de documento que propone el modelo solo se acepta si aparece en el texto original; si no, se extrae con reglas. Así, un número inventado nunca llega a la plataforma del cliente.
 
-**En producción.** El texto de los clientes sale hacia el proveedor del modelo, así que conviene uno con acuerdo de tratamiento de datos o un modelo servido dentro de la nube de la compañía. El adaptador actual funciona con cualquier API compatible con OpenAI; otra API solo pide un adaptador nuevo. El paso siguiente sería reunir solicitudes etiquetadas por empresa para medir qué tanto acierta el modelo frente a las reglas.
+**En producción.** El texto de los clientes sale hacia el proveedor del modelo: conviene uno con acuerdo de tratamiento de datos o un modelo servido en la nube de la compañía. El adaptador sirve para cualquier API compatible con OpenAI.
 
 ## 5. Manejo de errores y monitoreo
 
@@ -185,4 +185,4 @@ La propuesta usa AWS, aunque cada pieza tiene un equivalente directo en Azure o 
 | Observabilidad | **CloudWatch** para logs, métricas y alarmas (casos no creados, fallas del modelo, latencia) y **X-Ray** u OpenTelemetry para trazas. | Lo que el servicio ya registra y cuenta se convierte en tableros y alertas por empresa. |
 | Entrega continua | **GitHub Actions**: revisa el estilo, corre las pruebas y valida la configuración; luego construye la imagen y la despliega en ECS de forma gradual. | Nada llega a producción sin pasar las mismas pruebas que se corren en local. |
 
-Así, sumar una empresa es escribir su archivo, darle su llave en el gateway y, solo si su plataforma es nueva, programar un adaptador; atender más volumen es sumar réplicas y consumidores de la cola. En ningún caso cambia el código del triage.
+Así, sumar una empresa es escribir su archivo y darle su llave en el gateway (y un adaptador solo si su plataforma es nueva); más volumen es sumar réplicas y consumidores. El código del triage no cambia.

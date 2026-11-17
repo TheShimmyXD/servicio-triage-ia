@@ -56,6 +56,7 @@ configurables, que son auditables y repetibles.
 | `simuladores/` | El servicio de prioridad de MENSAJERIA DEL VALLE, simulado. |
 | `tests/` | Pruebas por capa, sin red. |
 | `docs/` | Documento técnico (PDF) y su fuente en Markdown. |
+| `evaluacion/` | Solicitudes etiquetadas y el script que mide la exactitud del triage. |
 | `Dockerfile`, `docker-compose.yml` | Imagen del servicio y los dos servicios juntos con Docker. |
 
 ## Requisitos e instalación
@@ -359,7 +360,7 @@ En Windows: `.venv\Scripts\python -m pytest` y `.venv\Scripts\python -m ruff che
 GitHub Actions corre lo mismo (`ruff check`, `ruff format --check` y `pytest`) en cada cambio a
 `main`: `.github/workflows/pruebas.yml`.
 
-134 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
+137 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
 respuesta real de Groq guardada en `tests/fixtures/` comprueba el análisis de su formato.
 
 | Carpeta | Qué cubre |
@@ -369,6 +370,26 @@ respuesta real de Groq guardada en `tests/fixtures/` comprueba el análisis de s
 | `tests/app/` | El caso de uso completo, los reintentos y el armado del servicio. |
 | `tests/entrypoints/` | La API: REQ-001, errores 404, 409 y 422, métricas. |
 | `tests/simuladores/` | El servicio de prioridad de MENSAJERIA DEL VALLE. |
+| `tests/evaluacion/` | Que las etiquetas del conjunto coincidan con los YAML de las empresas. |
+
+### Exactitud del triage
+
+```bash
+python -m evaluacion.medir_exactitud            # reglas y, con GROQ_API_KEY, también el LLM
+python -m evaluacion.medir_exactitud --detalle  # además, cada solicitud que falla
+```
+
+Mide sobre `evaluacion/solicitudes_etiquetadas.yaml`: 32 solicitudes escritas para la prueba
+(8 por empresa: las 4 categorías, 2 sin las palabras clave de las reglas y 2 sin la información
+mínima). Sin clave mide solo las reglas. Entre llamadas al LLM espera 8 s (`--pausa`) porque el
+plan gratuito de Groq limita las solicitudes por minuto. Resultado del 2026-11-17:
+
+| Modo | Categoría | Información mínima | Próximo paso | Latencia mediana |
+|---|---|---|---|---|
+| Reglas | 11/24 (46 %) | 12/32 (38 %) | 12/32 (38 %) | 0,2 ms |
+| LLM (`openai/gpt-oss-20b`) | 24/24 (100 %) | 32/32 (100 %) | 32/32 (100 %) | 823 ms |
+
+Las reglas son el respaldo: ante la duda cierran por información insuficiente en vez de adivinar.
 
 ## Documento técnico
 

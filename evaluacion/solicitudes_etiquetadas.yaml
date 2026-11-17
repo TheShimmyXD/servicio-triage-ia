@@ -1,0 +1,228 @@
+# Conjunto para medir la exactitud del triage (python -m evaluacion.medir_exactitud).
+#
+# Supuesto: los textos y las etiquetas los escribió una persona con el criterio del
+# enunciado; no salen de clientes reales. Por empresa hay 8 solicitudes: las 4 categorías,
+# 2 más redactadas sin las palabras clave de las reglas y 2 sin la información mínima.
+#
+# - categoria: la que asignaría un analista; null cuando falta información.
+# - proximo_paso: CIERRE_POR_INFORMACION_INSUFICIENTE si falta información; si no, la
+#   delegación de la categoría en el YAML de la empresa.
+
+solicitudes:
+  # GASES DEL ORINOCO
+  - id: GAS-01
+    compania: GASES DEL ORINOCO
+    descripcion: >-
+      Desde anoche se siente un olor fuerte en la cocina cerca del contador y me da miedo
+      prender algo. Necesito que manden a alguien a revisar hoy mismo.
+    categoria: Incidente técnico
+    proximo_paso: GESTION_EXTERNA
+  - id: GAS-02
+    compania: GASES DEL ORINOCO
+    descripcion: >-
+      El calentador dejó de prender el lunes pasado y llevamos tres días bañándonos con
+      agua fría. Solicito una visita técnica para repararlo. CC 1032456789
+    categoria: Incidente técnico
+    proximo_paso: GESTION_EXTERNA
+  - id: GAS-03
+    compania: GASES DEL ORINOCO
+    descripcion: >-
+      En la factura de octubre me llegó un valor que es casi el triple de lo que pago
+      siempre, y en la casa vivimos las mismas dos personas. Quiero que revisen la lectura
+      y me corrijan el cobro.
+    categoria: Reclamo de facturación
+    proximo_paso: GESTION_EXTERNA
+  - id: GAS-04
+    compania: GASES DEL ORINOCO
+    descripcion: >-
+      Este mes el banco me debitó dos veces el pago automático del gas, el 5 y el 6 de
+      noviembre. Pido que me devuelvan la plata del segundo débito.
+    categoria: Reclamo de facturación
+    proximo_paso: GESTION_EXTERNA
+  - id: GAS-05
+    compania: GASES DEL ORINOCO
+    descripcion: >-
+      Buenos días, me mudé al barrio la semana pasada y quisiera saber en qué lugares puedo
+      pagar el recibo y hasta qué hora atienden.
+    categoria: Consulta informativa
+    proximo_paso: RESPUESTA_DIRECTA
+  - id: GAS-06
+    compania: GASES DEL ORINOCO
+    descripcion: >-
+      Compré el apartamento en septiembre y el servicio sigue a nombre del dueño anterior.
+      Necesito pasar la cuenta a mi nombre, ¿qué documentos debo llevar?
+    categoria: Solicitud administrativa
+    proximo_paso: RESPUESTA_DIRECTA
+  - id: GAS-07
+    compania: GASES DEL ORINOCO
+    descripcion: Hola, tengo un problema con el gas, ¿me pueden llamar?
+    categoria: null
+    proximo_paso: CIERRE_POR_INFORMACION_INSUFICIENTE
+  - id: GAS-08
+    compania: GASES DEL ORINOCO
+    descripcion: Necesito ayuda urgente con mi cuenta por favor.
+    categoria: null
+    proximo_paso: CIERRE_POR_INFORMACION_INSUFICIENTE
+
+  # MENSAJERIA DEL VALLE
+  - id: MDV-01
+    compania: MENSAJERIA DEL VALLE
+    descripcion: >-
+      Hice un pedido el 3 de noviembre con entrega prometida para el 7 y hoy todavía no me
+      ha llegado nada. Necesito que me digan qué pasó y cuándo lo entregan. Mi cédula es
+      1144556677
+    categoria: Envío retrasado
+    proximo_paso: GESTION_EXTERNA
+  - id: MDV-02
+    compania: MENSAJERIA DEL VALLE
+    descripcion: >-
+      La guía 7781204 lleva desde el viernes quieta en la bodega de Cali y ya se pasó la
+      fecha de entrega. Requiero que la despachen pronto porque es un regalo.
+    categoria: Envío retrasado
+    proximo_paso: GESTION_EXTERNA
+  - id: MDV-03
+    compania: MENSAJERIA DEL VALLE
+    descripcion: >-
+      Ayer recibí la caja de la licuadora toda abollada y el vaso venía partido. Quiero que
+      me respondan por el daño o me manden otra.
+    categoria: Paquete dañado o perdido
+    proximo_paso: GESTION_EXTERNA
+  - id: MDV-04
+    compania: MENSAJERIA DEL VALLE
+    descripcion: >-
+      El sistema dice que el envío se entregó el martes, pero nadie en la casa lo recibió y
+      la portería no tiene registro. Necesito que lo busquen o me reintegren el valor.
+    categoria: Paquete dañado o perdido
+    proximo_paso: GESTION_EXTERNA
+  - id: MDV-05
+    compania: MENSAJERIA DEL VALLE
+    descripcion: >-
+      Envié unos documentos a Bogotá esta mañana y quisiera saber por dónde va el paquete y
+      en qué fecha llega. Número de guía 5520931.
+    categoria: Consulta de rastreo
+    proximo_paso: RESPUESTA_DIRECTA
+  - id: MDV-06
+    compania: MENSAJERIA DEL VALLE
+    descripcion: >-
+      Tengo un envío que sale mañana para mi casa, pero esta semana voy a estar donde mi
+      mamá. Necesito que lo lleven a la Calle 15 # 40-22 de Palmira.
+    categoria: Cambio de dirección
+    proximo_paso: RESPUESTA_DIRECTA
+  - id: MDV-07
+    compania: MENSAJERIA DEL VALLE
+    descripcion: Buenas, es sobre mi pedido.
+    categoria: null
+    proximo_paso: CIERRE_POR_INFORMACION_INSUFICIENTE
+  - id: MDV-08
+    compania: MENSAJERIA DEL VALLE
+    descripcion: Quiero poner una queja, pésimo el servicio de ustedes.
+    categoria: null
+    proximo_paso: CIERRE_POR_INFORMACION_INSUFICIENTE
+
+  # RED MOVIL ANDINA
+  - id: RMA-01
+    compania: RED MOVIL ANDINA
+    descripcion: >-
+      Desde el domingo el celular no tiene señal en mi casa, ni para llamar ni para datos, y
+      en el barrio a todos les pasa lo mismo. Necesito que revisen la antena.
+    categoria: Falla de servicio
+    proximo_paso: GESTION_EXTERNA
+  - id: RMA-02
+    compania: RED MOVIL ANDINA
+    descripcion: >-
+      Las videollamadas se congelan y las páginas tardan minutos en abrir desde hace una
+      semana, aunque pago el plan de 20 megas. Pido que revisen la conexión.
+    categoria: Falla de servicio
+    proximo_paso: GESTION_EXTERNA
+  - id: RMA-03
+    compania: RED MOVIL ANDINA
+    descripcion: >-
+      En la factura de este mes aparece un cobro de un servicio de juegos que nunca activé.
+      Solicito que lo quiten y me devuelvan lo cobrado. CC 79845123
+    categoria: Reclamo de facturación
+    proximo_paso: GESTION_EXTERNA
+  - id: RMA-04
+    compania: RED MOVIL ANDINA
+    descripcion: >-
+      Me llegó el recibo de noviembre por 180 mil cuando mi plan cuesta 65 mil, y no hice
+      llamadas internacionales. Quiero que me expliquen y ajusten el valor.
+    categoria: Reclamo de facturación
+    proximo_paso: GESTION_EXTERNA
+  - id: RMA-05
+    compania: RED MOVIL ANDINA
+    descripcion: >-
+      Quiero traer mi número de otro operador a ustedes. Hice la solicitud hace diez días y
+      la línea sigue con el operador anterior. Necesito que terminen el trámite.
+    categoria: Portabilidad
+    proximo_paso: GESTION_EXTERNA
+  - id: RMA-06
+    compania: RED MOVIL ANDINA
+    descripcion: >-
+      Se me vence la permanencia este mes y quiero saber qué planes con más datos tienen y
+      cuánto cuestan, para decidir si me quedo.
+    categoria: Consulta de planes
+    proximo_paso: RESPUESTA_DIRECTA
+  - id: RMA-07
+    compania: RED MOVIL ANDINA
+    descripcion: No me sirve, arréglenlo.
+    categoria: null
+    proximo_paso: CIERRE_POR_INFORMACION_INSUFICIENTE
+  - id: RMA-08
+    compania: RED MOVIL ANDINA
+    descripcion: Por favor comunicarse conmigo.
+    categoria: null
+    proximo_paso: CIERRE_POR_INFORMACION_INSUFICIENTE
+
+  # SALUD INTEGRAL DEL LLANO
+  - id: SAL-01
+    compania: SALUD INTEGRAL DEL LLANO
+    descripcion: >-
+      El ortopedista me ordenó una resonancia de rodilla y en la sede me dicen que todavía
+      no está autorizada. Necesito que la aprueben para poder agendarla.
+    categoria: Autorización de procedimiento
+    proximo_paso: GESTION_EXTERNA
+  - id: SAL-02
+    compania: SALUD INTEGRAL DEL LLANO
+    descripcion: >-
+      Mi mamá tiene orden para cirugía de cataratas desde agosto y todavía no le han dado el
+      visto bueno. Pedimos que le den el permiso porque cada vez ve menos.
+    categoria: Autorización de procedimiento
+    proximo_paso: GESTION_EXTERNA
+  - id: SAL-03
+    compania: SALUD INTEGRAL DEL LLANO
+    descripcion: >-
+      En la farmacia solo me entregaron la mitad de la insulina que me recetó el médico y me
+      dijeron que vuelva en quince días. Necesito el resto porque se me acaba antes.
+    categoria: Medicamentos
+    proximo_paso: GESTION_EXTERNA
+  - id: SAL-04
+    compania: SALUD INTEGRAL DEL LLANO
+    descripcion: >-
+      Ayer esperé cuatro horas en urgencias de la sede centro y la enfermera me trató de mala
+      manera cuando pregunté por el turno. Quiero dejar una queja formal.
+    categoria: Queja por atención
+    proximo_paso: GESTION_EXTERNA
+  - id: SAL-05
+    compania: SALUD INTEGRAL DEL LLANO
+    descripcion: >-
+      Necesito una cita con medicina general para mi hija, tiene tos desde hace tres días.
+      ¿Hay disponibilidad esta semana?
+    categoria: Cita médica
+    proximo_paso: RESPUESTA_DIRECTA
+  - id: SAL-06
+    compania: SALUD INTEGRAL DEL LLANO
+    descripcion: >-
+      Tenía cita con el cardiólogo el jueves pero me salió un viaje de trabajo. Quiero
+      cambiarla para la otra semana.
+    categoria: Cita médica
+    proximo_paso: RESPUESTA_DIRECTA
+  - id: SAL-07
+    compania: SALUD INTEGRAL DEL LLANO
+    descripcion: Necesito información.
+    categoria: null
+    proximo_paso: CIERRE_POR_INFORMACION_INSUFICIENTE
+  - id: SAL-08
+    compania: SALUD INTEGRAL DEL LLANO
+    descripcion: Es para lo de mi mamá, gracias.
+    categoria: null
+    proximo_paso: CIERRE_POR_INFORMACION_INSUFICIENTE
