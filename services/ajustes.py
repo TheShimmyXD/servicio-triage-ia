@@ -23,6 +23,8 @@ class AjustesLLM(BaseSettings):
     llm_url_base: str = "https://api.groq.com/openai/v1"
     groq_api_key: SecretStr | None = None
     llm_timeout_s: float = Field(default=10.0, gt=0, le=60)
+    llm_fallas_para_abrir: int = Field(default=3, ge=1)
+    llm_pausa_cortocircuito_s: float = Field(default=30.0, gt=0, le=3600)
 
     @property
     def clave(self) -> str:

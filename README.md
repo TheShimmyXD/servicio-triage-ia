@@ -100,6 +100,8 @@ Se leen del `.env` o del entorno (el entorno manda).
 | `LLM_URL_BASE` | `https://api.groq.com/openai/v1` | URL base compatible con la API de OpenAI; permite cambiar de proveedor. |
 | `GROQ_API_KEY` | vacía | Clave del proveedor. Vacía equivale a `LLM_PROVEEDOR=ninguno`. |
 | `LLM_TIMEOUT_S` | `10` | Segundos de espera al LLM antes de resolver con reglas (máximo 60). |
+| `LLM_FALLAS_PARA_ABRIR` | `3` | Fallas seguidas del LLM que abren el cortocircuito. |
+| `LLM_PAUSA_CORTOCIRCUITO_S` | `30` | Segundos en que, abierto el cortocircuito, se usan las reglas sin llamar al LLM. |
 | `PRIORIDAD_EXTERNA` | `activa` | `activa` consulta los servicios de prioridad de los clientes; `ninguna` usa siempre las reglas. |
 
 La URL, el timeout y los reintentos de cada servicio de prioridad van en el YAML de su empresa.
@@ -304,7 +306,10 @@ válidas. El nombre se compara sin distinguir mayúsculas, tildes ni espacios de
 ```
 
 **El LLM no responde o responde mal.** La solicitud se resuelve con las reglas de la empresa
-y se cuenta en `llm_fallidos`. El cliente recibe la misma forma de respuesta.
+y se cuenta en `llm_fallidos`. El cliente recibe la misma forma de respuesta. Tras 3 fallas
+seguidas (`LLM_FALLAS_PARA_ABRIR`) se abre un cortocircuito: durante 30 s
+(`LLM_PAUSA_CORTOCIRCUITO_S`) se usan las reglas sin llamar al LLM, así una caída del proveedor
+no suma el timeout a cada solicitud. Luego una llamada de prueba decide si se cierra.
 
 **El servicio de prioridad del cliente no responde.** Se reintenta según su YAML y luego se
 prioriza con las reglas; la justificación dice por qué.
@@ -360,14 +365,14 @@ En Windows: `.venv\Scripts\python -m pytest` y `.venv\Scripts\python -m ruff che
 GitHub Actions corre lo mismo (`ruff check`, `ruff format --check` y `pytest`) en cada cambio a
 `main`: `.github/workflows/pruebas.yml`.
 
-137 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
+142 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
 respuesta real de Groq guardada en `tests/fixtures/` comprueba el análisis de su formato.
 
 | Carpeta | Qué cubre |
 |---|---|
 | `tests/domain/` | Contrato, documento del cliente, información mínima, prioridad, próximo paso, justificación y duplicados. |
 | `tests/services/` | Carga y validación de los YAML, analizador del LLM (salidas válidas e inválidas), plataformas y proveedor HTTP. |
-| `tests/app/` | El caso de uso completo, los reintentos y el armado del servicio. |
+| `tests/app/` | El caso de uso completo, los reintentos, el cortocircuito del LLM y el armado del servicio. |
 | `tests/entrypoints/` | La API: REQ-001, errores 404, 409 y 422, métricas. |
 | `tests/simuladores/` | El servicio de prioridad de MENSAJERIA DEL VALLE. |
 | `tests/evaluacion/` | Que las etiquetas del conjunto coincidan con los YAML de las empresas. |
