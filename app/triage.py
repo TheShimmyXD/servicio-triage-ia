@@ -224,7 +224,7 @@ class CasoDeUsoTriage:
             )
             return DecisionPrioridad(
                 por_reglas.prioridad,
-                f"{por_reglas.motivo}; el servicio de prioridad del cliente no respondió",
+                f"{por_reglas.motivo}; no se usó el servicio de prioridad del cliente ({error})",
             )
         return DecisionPrioridad(
             prioridad, "así lo indica el servicio de prioridad del cliente", "servicio del cliente"

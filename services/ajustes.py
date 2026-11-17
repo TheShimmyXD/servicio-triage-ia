@@ -1,4 +1,4 @@
-"""Ajustes del LLM leídos del .env o de las variables de entorno (ver .env.example)."""
+"""Ajustes del servicio leídos del .env o de las variables de entorno (ver .env.example)."""
 
 from __future__ import annotations
 
@@ -28,3 +28,15 @@ class AjustesLLM(BaseSettings):
     def clave(self) -> str:
         """La clave en claro, solo para el encabezado del pedido. Vacía si no hay."""
         return self.groq_api_key.get_secret_value().strip() if self.groq_api_key else ""
+
+
+class AjustesProveedores(BaseSettings):
+    """Servicios externos de prioridad de los clientes (por ejemplo, MENSAJERIA DEL VALLE)."""
+
+    model_config = SettingsConfigDict(
+        env_file=ARCHIVO_ENV, env_file_encoding="utf-8", extra="ignore"
+    )
+
+    prioridad_externa: Literal["activa", "ninguna"] = "activa"
+    """Con "ninguna" toda empresa prioriza con sus reglas; las pruebas la usan para no
+    depender de un servicio que puede estar arriba o no."""

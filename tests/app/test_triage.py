@@ -140,7 +140,7 @@ def test_si_el_servicio_del_cliente_falla_se_usan_las_reglas():
     caso_de_uso, _ = _armar(proveedor=ProveedorPrioridadFalso(falla=True))
     resultado = caso_de_uso.ejecutar(Solicitud("MENSAJERIA DEL VALLE", "M-2", TEXTO_MDV))
     assert resultado.solicitud_prioridad is Prioridad.MEDIA
-    assert "no respondió" in resultado.justificacion
+    assert "no se usó el servicio de prioridad del cliente" in resultado.justificacion
     assert "reglas de la empresa" in resultado.justificacion
 
 
