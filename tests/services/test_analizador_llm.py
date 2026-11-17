@@ -112,6 +112,42 @@ def test_fallas_http_son_error(manejador, motivo):
         _analizador(manejador).analizar(TEXTO_JUANA, GASES)
 
 
+def test_el_motivo_trae_el_codigo_de_groq_y_no_el_mensaje():
+    cuerpo = {
+        "error": {
+            "message": "Failed to validate JSON: Juana 102045678",
+            "type": "invalid_request_error",
+            "code": "json_validate_failed",
+            "failed_generation": '{"categoria": "Juana 102045678"}',
+        }
+    }
+    with pytest.raises(ErrorLLM) as error:
+        _analizador(lambda p: httpx2.Response(400, json=cuerpo)).analizar(TEXTO_JUANA, GASES)
+    assert str(error.value) == "HTTP 400 json_validate_failed"
+
+
+@pytest.mark.parametrize(
+    ("cuerpo", "motivo"),
+    [
+        ({"error": {"type": "rate_limit_error"}}, "HTTP 429 rate_limit_error"),
+        ({"error": {"code": "Juana tiene cédula 102045678"}}, "HTTP 429"),
+        ({"error": {"code": "x" * 65}}, "HTTP 429"),
+        ({"error": "limite"}, "HTTP 429"),
+        (["no", "es", "objeto"], "HTTP 429"),
+    ],
+)
+def test_un_codigo_que_no_es_identificador_no_pasa_al_motivo(cuerpo, motivo):
+    with pytest.raises(ErrorLLM) as error:
+        _analizador(lambda p: httpx2.Response(429, json=cuerpo)).analizar(TEXTO_JUANA, GASES)
+    assert str(error.value) == motivo
+
+
+def test_un_error_sin_json_queda_solo_con_el_estado():
+    with pytest.raises(ErrorLLM) as error:
+        _analizador(lambda p: httpx2.Response(503, content=b"<html>")).analizar(TEXTO_JUANA, GASES)
+    assert str(error.value) == "HTTP 503"
+
+
 def test_timeout_es_error():
     def manejador(pedido):
         raise httpx2.ReadTimeout("lento", request=pedido)

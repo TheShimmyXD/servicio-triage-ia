@@ -343,7 +343,9 @@ El plan gratuito de Groq limita los tokens por minuto: una ráfaga (en una prueb
 solicitudes en unos 10 s) recibe HTTP 429 y esas solicitudes se resuelven con reglas, que
 aciertan menos (ver «Exactitud del triage»). El log dice de dónde salió cada clasificación
 (`triage ... fuente=llm` o `fuente=reglas`) y el motivo de cada falla
-(`llm_fallo ... motivo=HTTP 429`). Para ver el LLM en acción conviene espaciar las solicitudes
+(`llm_fallo ... motivo=HTTP 429`). Si el proveedor manda un código de error, el motivo lo
+agrega (p. ej. `HTTP 404 model_not_found`), nunca su mensaje: este puede repetir el texto de
+la solicitud. Para ver el LLM en acción conviene espaciar las solicitudes
 unos segundos o usar un plan con más cupo.
 
 **El servicio de prioridad del cliente no responde.** Se reintenta según su YAML y luego se

@@ -8,6 +8,7 @@ vuelve ErrorLLM y el caso de uso sigue con las reglas de la empresa.
 from __future__ import annotations
 
 import logging
+import re
 import time
 from typing import Any
 
@@ -28,6 +29,10 @@ _ELEMENTOS = {
 }
 
 _TEXTO_O_NULO = {"type": ["string", "null"]}
+
+# Un código de error es un identificador corto (json_validate_failed, rate_limit_exceeded).
+# Lo que no tenga esa forma se descarta: podría ser texto libre con datos del pedido.
+_CODIGO_SEGURO = re.compile(r"[A-Za-z0-9_.-]{1,64}")
 
 
 def armar_esquema(empresa: ConfiguracionEmpresa) -> dict[str, Any]:
@@ -126,6 +131,25 @@ def interpretar_respuesta(cuerpo: Any) -> AnalisisLLM:
     return AnalisisLLM(**salida.model_dump())
 
 
+def codigo_de_error(respuesta: httpx2.Response) -> str | None:
+    """Solo error.code (o error.type) del cuerpo, si es un identificador corto.
+
+    El mensaje y failed_generation nunca se leen: pueden repetir el texto de la solicitud,
+    con nombres y documentos del cliente.
+    """
+    try:
+        error = respuesta.json().get("error")
+    except (ValueError, AttributeError):
+        return None
+    if not isinstance(error, dict):
+        return None
+    for clave in ("code", "type"):
+        valor = error.get(clave)
+        if isinstance(valor, str) and _CODIGO_SEGURO.fullmatch(valor):
+            return valor
+    return None
+
+
 class AnalizadorCompatibleOpenAI:
     """Un pedido por solicitud a {url_base}/chat/completions. Sin reintentos: tras el
     timeout manda el respaldo por reglas, que responde al instante."""
@@ -157,8 +181,9 @@ class AnalizadorCompatibleOpenAI:
             raise ErrorLLM(f"error de red ({type(error).__name__})") from error
         latencia_ms = round((time.perf_counter() - inicio) * 1000)
         if respuesta.status_code != 200:
-            # El cuerpo del error no se registra: podría repetir datos del pedido.
-            raise ErrorLLM(f"HTTP {respuesta.status_code}")
+            codigo = codigo_de_error(respuesta)
+            sufijo = f" {codigo}" if codigo else ""
+            raise ErrorLLM(f"HTTP {respuesta.status_code}{sufijo}")
         try:
             cuerpo = respuesta.json()
         except ValueError as error:
