@@ -105,7 +105,7 @@ Hay además límites menores: la configuración se lee al arrancar, así que un 
 
 ## 3. Por qué soporta el crecimiento en clientes y categorías
 
-**Más empresas.** Incorporar una empresa es agregar su archivo de configuración con categorías, reglas de prioridad, próximos pasos y plataforma. El servicio lo valida al arrancar y la empresa queda disponible de inmediato. Se comprobó con una quinta empresa ficticia, ACUEDUCTO DEL SUR, sin cambiar una línea de código.
+**Más empresas.** Incorporar una empresa es agregar su archivo de configuración con categorías, reglas de prioridad, próximos pasos y plataforma. El servicio lo valida al arrancar y, al reiniciarlo, la empresa queda disponible. Se comprobó con una quinta empresa ficticia, ACUEDUCTO DEL SUR, sin cambiar una línea de código.
 
 **Más categorías y reglas.** Cada categoría se define en un solo lugar: el archivo de su empresa. Ahí tiene una descripción que orienta al modelo, palabras clave para el respaldo por reglas, su prioridad base y su próximo paso. La lista de categorías entre las que puede elegir el modelo se arma en cada petición a partir de ese archivo, de modo que una categoría nueva funciona en cuanto se escribe y no hay nada que reentrenar. Las señales de urgencia (frases como «urgente» o «varios días») solo pueden subir la prioridad, nunca bajarla.
 
@@ -119,7 +119,7 @@ La estrategia es **híbrida**: el modelo de lenguaje interpreta el texto y las r
 
 **Qué hace el modelo.** Lee la descripción y devuelve una respuesta estructurada que debe cumplir un esquema JSON estricto: la categoría (solo puede elegir entre las de la empresa), si la información es suficiente, los hechos de la solicitud y el tipo y número del documento del cliente. Se usa gpt-oss-20b, un modelo abierto servido por Groq, por su salida estricta, su velocidad y su bajo costo; cambiarlo es configuración.
 
-**Por qué un modelo y no solo reglas.** Las solicitudes llegan en texto libre, con errores y muchas formas de decir lo mismo; un clasificador propio exigiría datos etiquetados y reentrenarlo con cada empresa nueva, mientras que el modelo recibe las categorías en cada petición. Sobre 32 solicitudes etiquetadas (8 por empresa, carpeta `evaluacion/`), el modelo acertó la categoría en 24 de 24 y el próximo paso en 32 de 32, con una mediana de 0,8 s; las reglas solas, en 11 de 24 y 12 de 32, porque ante la duda cierran por falta de información. El conjunto es pequeño y no viene de clientes reales: ampliarlo con casos reales es el paso siguiente.
+**Por qué un modelo y no solo reglas.** Las solicitudes llegan en texto libre, con errores y muchas formas de decir lo mismo; un clasificador propio exigiría datos etiquetados y reentrenarlo con cada empresa nueva, mientras que el modelo recibe las categorías en cada petición. Sobre 32 solicitudes etiquetadas (8 por empresa, carpeta `evaluacion/`), el modelo acertó la categoría en 24 de 24 y el próximo paso en 32 de 32, con una mediana de 0,8 s; las reglas solas, en 11 de 24 y 12 de 32, porque ante la duda cierran por falta de información. Ese es el riesgo del respaldo: sin modelo, un caso válido puede cerrarse; el log marca la fuente de cada respuesta para revisarlo. El conjunto es pequeño y sintético: ampliarlo con casos reales es el paso siguiente.
 
 **Por qué las decisiones no las toma el modelo.** La prioridad, el próximo paso y el estado salen de reglas porque forman parte del acuerdo con cada empresa: tienen que ser deterministas, auditables y repetibles, y no pueden depender de que un proveedor externo responda.
 
@@ -134,16 +134,16 @@ La estrategia es **híbrida**: el modelo de lenguaje interpreta el texto y las r
 
 | Situación | Qué hace el servicio |
 |---|---|
-| La plataforma de la empresa falla | Lo intenta tres veces, esperando un poco más cada vez (0,2 s y 0,4 s). Si no lo logra, responde igual con el triage completo, marca el estado como error de plataforma y explica el motivo en la justificación. Reenviar la solicitud vuelve a intentar la creación. |
-| Llega una solicitud repetida | Si el texto es el mismo, devuelve el resultado ya guardado sin consultar al modelo ni crear otro caso. Si el texto cambió, la rechaza (409). |
+| La plataforma de la empresa falla | Lo intenta tres veces (o las que fije el archivo de la empresa), esperando un poco más cada vez. Si no lo logra, responde igual con el triage completo, marca el estado como error de plataforma y explica el motivo en la justificación. Reenviar la solicitud vuelve a intentar la creación. |
+| Solicitud repetida | Si el texto es el mismo, devuelve el resultado ya guardado sin consultar al modelo ni crear otro caso. Si el texto cambió, la rechaza (409). |
 | La empresa no existe | Responde 404 con la lista de empresas válidas. |
-| El modelo falla o responde mal | Resuelve con las reglas y la respuesta conserva la misma forma. |
+| Falla el modelo | Resuelve con las reglas, con la misma forma de respuesta; tras tres fallas seguidas no lo llama durante 30 s. |
 | El servicio de prioridad del cliente no responde | Reintenta según el archivo de la empresa y luego prioriza con las reglas, explicándolo en la justificación. |
-| La entrada no es válida o hay un error imprevisto | Responde 422 indicando el campo y el problema; un error imprevisto devuelve 500 y queda en el log. |
+| Entrada inválida o error imprevisto | Responde 422 indicando el campo y el problema; un error imprevisto devuelve 500 y queda en el log. |
 
 Cada error trae un código legible (como `EMPRESA_NO_PARAMETRIZADA`) y un mensaje, descritos en el README.
 
-Para el monitoreo, el servicio deja en el log cada intento fallido contra una plataforma (con la empresa, la solicitud y el número de intento), cada llamada al modelo con su latencia y sus tokens, y cada documento que el modelo propuso pero no aparecía en el texto. Además, el endpoint `/metricas` informa por empresa cuántos casos se crearon, cuántos intentos fallaron, cuántos casos no se pudieron crear, cuántos duplicados y conflictos hubo y cuántas veces falló el modelo, y `/salud` indica si el servicio está arriba. El repositorio incluye 134 pruebas automáticas, organizadas por capa y sin acceso a red.
+Para el monitoreo, el servicio deja en el log cada intento fallido contra una plataforma (con la empresa, la solicitud y el número de intento), cada llamada al modelo con su latencia y sus tokens, y cada documento que el modelo propuso pero no aparecía en el texto. Además, el endpoint `/metricas` informa por empresa cuántos casos se crearon, cuántos intentos fallaron, cuántos casos no se pudieron crear, cuántos duplicados y conflictos hubo y cuántas veces falló el modelo, y `/salud` indica si el servicio está arriba. El repositorio incluye 146 pruebas automáticas, organizadas por capa y sin acceso a red.
 
 ## 6. Propuesta de despliegue en la nube
 
