@@ -54,6 +54,7 @@ configurables, que son auditables y repetibles.
 | `simuladores/` | El servicio de prioridad de MENSAJERIA DEL VALLE, simulado. |
 | `tests/` | Pruebas por capa, sin red. |
 | `docs/` | Documento técnico (PDF) y su fuente en Markdown. |
+| `Dockerfile`, `docker-compose.yml` | Imagen del servicio y los dos servicios juntos con Docker. |
 
 ## Requisitos e instalación
 
@@ -128,6 +129,19 @@ La documentación interactiva queda en <http://localhost:8000/docs>.
 | `GET /empresas` | Las empresas parametrizadas. |
 | `GET /metricas` | Contadores por empresa: casos creados, fallas de plataforma, duplicados, LLM caído. |
 | `GET /salud` | `{"estado": "ok"}`. |
+
+### Con Docker
+
+Sin instalar Python, `docker compose` levanta el servicio de triage y el simulador. El
+simulador comparte la red del servicio de triage, así que la URL de su YAML no cambia.
+
+```bash
+cp .env.example .env   # opcional: sin clave clasifica solo con reglas
+docker compose up --build
+```
+
+La clave se pasa al contenedor desde `.env` y no entra a la imagen. Los ejemplos de abajo
+funcionan igual en `localhost:8000`; `docker compose down` detiene todo.
 
 ### Ejemplos
 

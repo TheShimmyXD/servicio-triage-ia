@@ -1,0 +1,26 @@
+# Servicio de triage y simulador de prioridad de MENSAJERIA DEL VALLE.
+#   docker compose up --build
+# La clave de Groq se lee de .env (opcional: sin él, el servicio clasifica solo con reglas).
+services:
+  triage:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "8000:8000"
+
+  mensajeria-del-valle:
+    build: .
+    command:
+      - uvicorn
+      - simuladores.mensajeria_del_valle.servicio:aplicacion
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8001"
+    # Comparte la red del servicio de triage: la URL de su YAML (127.0.0.1:8001) funciona
+    # igual que en local, sin cambiar la configuración de la empresa.
+    network_mode: "service:triage"
+    depends_on:
+      - triage

@@ -1,0 +1,18 @@
+# La clave del LLM nunca entra a la imagen: docker compose la pasa desde .env.
+.env
+.env.*
+
+# Entorno local, Git y cachés
+.venv/
+.git/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+logs/
+*.log
+
+# No hacen falta para correr el servicio
+tests/
+docs/
