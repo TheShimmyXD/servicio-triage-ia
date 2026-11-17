@@ -15,3 +15,4 @@
 - Documento técnico en `docs/` (PDF de 4 páginas) y su construcción desde Markdown.
 - README con la URL del repositorio en las instrucciones de instalación.
 - `Dockerfile` y `docker-compose.yml`: servicio de triage y simulador de MENSAJERIA DEL VALLE.
+- GitHub Actions con `ruff` y `pytest` en cada cambio a `main`.

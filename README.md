@@ -1,5 +1,7 @@
 # Servicio de triage de solicitudes
 
+[![Pruebas](https://github.com/TheShimmyXD/servicio-triage-ia/actions/workflows/pruebas.yml/badge.svg)](https://github.com/TheShimmyXD/servicio-triage-ia/actions/workflows/pruebas.yml)
+
 Microservicio REST que recibe solicitudes en texto libre de varias empresas, las valida,
 las clasifica, les asigna prioridad, decide el próximo paso y, cuando corresponde, crea el
 caso en la plataforma de la empresa.
@@ -353,6 +355,9 @@ ruff check .
 ```
 
 En Windows: `.venv\Scripts\python -m pytest` y `.venv\Scripts\python -m ruff check .`
+
+GitHub Actions corre lo mismo (`ruff check`, `ruff format --check` y `pytest`) en cada cambio a
+`main`: `.github/workflows/pruebas.yml`.
 
 134 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
 respuesta real de Groq guardada en `tests/fixtures/` comprueba el análisis de su formato.
