@@ -10,7 +10,7 @@ from domain.informacion_minima import evaluar_informacion_minima, extraer_hecho_
 from domain.justificacion import construir_justificacion
 from domain.prioridad import calcular_prioridad
 from domain.proximo_paso import decidir_proximo_paso, estado_para
-from tests.domain.datos import DELEGACIONES_GAS, REGLAS_GAS, TEXTO_INCOMPLETO, TEXTO_JUANA
+from tests.domain.datos import DELEGACIONES_GAS, REGLAS_GAS, TEXTO_INCOMPLETO, TEXTO_JUANA, TIPOS
 
 FECHA = date(2026, 11, 17)
 
@@ -34,7 +34,7 @@ def _triage_de_dominio(solicitud: Solicitud, categoria: str) -> ResultadoTriage:
     """Encadena las reglas como lo hará el caso de uso, con la categoría ya decidida."""
     evaluacion = evaluar_informacion_minima(solicitud.solicitud_descripcion)
     paso = decidir_proximo_paso(evaluacion.suficiente, categoria, DELEGACIONES_GAS)
-    documento = extraer_documento(solicitud.solicitud_descripcion)
+    documento = extraer_documento(solicitud.solicitud_descripcion, TIPOS)
     decision = (
         calcular_prioridad(categoria, solicitud.solicitud_descripcion, REGLAS_GAS)
         if evaluacion.suficiente

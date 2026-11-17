@@ -27,7 +27,7 @@ from domain.contrato import (
     ResultadoTriage,
     Solicitud,
 )
-from domain.documento_cliente import extraer_documento
+from domain.documento_cliente import TiposDocumento, extraer_documento
 from domain.duplicados import (
     AccionAnteDuplicado,
     SolicitudAtendida,
@@ -56,8 +56,6 @@ from domain.puertos import (
 )
 
 registro = logging.getLogger(__name__)
-
-TIPOS_DOCUMENTO = frozenset({"CC", "CE", "NIT", "TI", "PA"})
 
 
 @dataclass
@@ -127,7 +125,7 @@ class CasoDeUsoTriage:
         texto = solicitud.solicitud_descripcion
         analisis = self._analizar_con_llm(texto, empresa, solicitud.solicitud_id)
 
-        documento = _documento_verificado(analisis, texto)
+        documento = _documento_verificado(analisis, texto, empresa.tipos_documento)
         if analisis is not None:
             suficiente = analisis.informacion_suficiente
             # El esquema obliga al LLM a elegir una categoría aun sin datos; si dice que la
@@ -271,7 +269,9 @@ def _hecho_verificado(analisis: AnalisisLLM, texto: str, solicitud_id: str) -> s
     return hecho or extraer_hecho_principal(texto)
 
 
-def _documento_verificado(analisis: AnalisisLLM | None, texto: str) -> DocumentoCliente | None:
+def _documento_verificado(
+    analisis: AnalisisLLM | None, texto: str, tipos: TiposDocumento
+) -> DocumentoCliente | None:
     """Usa el documento del LLM solo si su número aparece en el texto; si no, las reglas.
 
     Evita que un número inventado por el modelo llegue a la plataforma del cliente.
@@ -281,7 +281,7 @@ def _documento_verificado(analisis: AnalisisLLM | None, texto: str) -> Documento
         numero = re.sub(r"[^\dA-Za-z-]", "", analisis.numero_documento)
         digitos_texto = re.sub(r"\D", "", texto)
         digitos_numero = re.sub(r"\D", "", numero)
-        if tipo in TIPOS_DOCUMENTO and len(digitos_numero) >= 5 and digitos_numero in digitos_texto:
+        if tipo in tipos.codigos and len(digitos_numero) >= 5 and digitos_numero in digitos_texto:
             return DocumentoCliente(tipo, numero)
         registro.warning("llm_documento_no_verificado tipo=%s", tipo)
-    return extraer_documento(texto)
+    return extraer_documento(texto, tipos)

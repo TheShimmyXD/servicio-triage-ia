@@ -1,12 +1,15 @@
 """Carga y validación de la configuración de empresas desde YAML.
 
-Un archivo por empresa en configuracion/empresas/. Todo se valida al arrancar: un
+Un archivo por empresa en configuracion/empresas/ (o en la carpeta que diga
+CARPETA_EMPRESAS) y la lista global de tipos de documento en
+configuracion/tipos_documento.yaml. Todo se valida al arrancar: un
 archivo mal formado detiene el servicio con el archivo y el campo culpables, en vez de
 fallar a mitad de una solicitud.
 """
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
@@ -14,6 +17,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from domain.contrato import Prioridad, ProximoPaso
+from domain.documento_cliente import FormatoNumero, TipoDocumento, TiposDocumento
 from domain.empresa import (
     CatalogoEmpresas,
     Categoria,
@@ -26,7 +30,9 @@ from domain.informacion_minima import ElementoMinimo
 from domain.prioridad import ReglasPrioridad, SenalPrioridad
 from domain.texto import normalizar
 
-CARPETA_POR_DEFECTO = Path(__file__).resolve().parent.parent / "configuracion" / "empresas"
+_CONFIGURACION = Path(__file__).resolve().parent.parent / "configuracion"
+CARPETA_POR_DEFECTO = _CONFIGURACION / "empresas"
+ARCHIVO_TIPOS_POR_DEFECTO = _CONFIGURACION / "tipos_documento.yaml"
 
 TextoNoVacio = Annotated[str, Field(min_length=1)]
 
@@ -34,6 +40,40 @@ TextoNoVacio = Annotated[str, Field(min_length=1)]
 class _Estricto(BaseModel):
     # Un campo mal escrito ("delegacion") es un error, no un valor por defecto silencioso.
     model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class _TipoDocumento(_Estricto):
+    codigo: Annotated[str, Field(pattern=r"^[A-Z]{1,5}$")]
+    nombre: TextoNoVacio
+    etiqueta: TextoNoVacio
+    formato: FormatoNumero = FormatoNumero.NUMERICO
+
+    @model_validator(mode="after")
+    def _etiqueta_compila(self) -> _TipoDocumento:
+        try:
+            re.compile(self.etiqueta)
+        except re.error as error:
+            raise ValueError(
+                f"etiqueta de {self.codigo} no es una expresión válida: {error}"
+            ) from error
+        return self
+
+
+class _TiposDocumento(_Estricto):
+    tipos: list[_TipoDocumento] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _codigos_unicos(self) -> _TiposDocumento:
+        codigos = [t.codigo for t in self.tipos]
+        repetidos = sorted({c for c in codigos if codigos.count(c) > 1})
+        if repetidos:
+            raise ValueError(f"códigos repetidos: {repetidos}")
+        return self
+
+    def a_dominio(self) -> TiposDocumento:
+        return TiposDocumento.de(
+            TipoDocumento(t.codigo, t.nombre, t.etiqueta, t.formato) for t in self.tipos
+        )
 
 
 class _Categoria(_Estricto):
@@ -111,7 +151,7 @@ class _Empresa(_Estricto):
             )
         return self
 
-    def a_dominio(self) -> ConfiguracionEmpresa:
+    def a_dominio(self, tipos_documento: TiposDocumento) -> ConfiguracionEmpresa:
         proveedor = self.proveedor_prioridad
         return ConfiguracionEmpresa(
             nombre=self.nombre,
@@ -149,6 +189,7 @@ class _Empresa(_Estricto):
                 if isinstance(proveedor, _ProveedorHttp)
                 else ConfiguracionProveedorPrioridad()
             ),
+            tipos_documento=tipos_documento,
         )
 
 
@@ -164,27 +205,47 @@ def _describir_errores(archivo: Path, error: ValidationError) -> str:
     return "\n".join(lineas)
 
 
-def cargar_empresa(archivo: Path) -> ConfiguracionEmpresa:
-    """Lee y valida un YAML de empresa."""
+def _leer_mapa(archivo: Path, que: str) -> dict[str, Any]:
     try:
         datos = yaml.safe_load(archivo.read_text(encoding="utf-8"))
+    except OSError as error:
+        raise ConfiguracionInvalida(f"{archivo}: no se pudo leer: {error}") from error
     except yaml.YAMLError as error:
         raise ConfiguracionInvalida(f"{archivo.name}: YAML mal formado: {error}") from error
     if not isinstance(datos, dict):
-        raise ConfiguracionInvalida(f"{archivo.name}: se esperaba un mapa con la empresa")
+        raise ConfiguracionInvalida(f"{archivo.name}: se esperaba un mapa con {que}")
+    return datos
+
+
+def cargar_tipos_documento(archivo: Path = ARCHIVO_TIPOS_POR_DEFECTO) -> TiposDocumento:
+    """Lee y valida la lista global de tipos de documento."""
+    datos = _leer_mapa(archivo, "los tipos de documento")
     try:
-        return _Empresa.model_validate(datos).a_dominio()
+        return _TiposDocumento.model_validate(datos).a_dominio()
     except ValidationError as error:
         raise ConfiguracionInvalida(_describir_errores(archivo, error)) from error
 
 
-def cargar_catalogo(carpeta: Path = CARPETA_POR_DEFECTO) -> CatalogoEmpresas:
+def cargar_empresa(archivo: Path, tipos: TiposDocumento | None = None) -> ConfiguracionEmpresa:
+    """Lee y valida un YAML de empresa; sin tipos, usa la lista global por defecto."""
+    datos = _leer_mapa(archivo, "la empresa")
+    try:
+        empresa = _Empresa.model_validate(datos)
+    except ValidationError as error:
+        raise ConfiguracionInvalida(_describir_errores(archivo, error)) from error
+    return empresa.a_dominio(tipos or cargar_tipos_documento())
+
+
+def cargar_catalogo(
+    carpeta: Path = CARPETA_POR_DEFECTO, archivo_tipos: Path = ARCHIVO_TIPOS_POR_DEFECTO
+) -> CatalogoEmpresas:
     """Carga todas las empresas de la carpeta. Sin empresas, el servicio no tiene sentido."""
+    tipos = cargar_tipos_documento(archivo_tipos)
     archivos = sorted([*carpeta.glob("*.yaml"), *carpeta.glob("*.yml")])
     if not archivos:
         raise ConfiguracionInvalida(f"No hay archivos de empresa en {carpeta}")
     try:
-        return CatalogoEmpresas(cargar_empresa(a) for a in archivos)
+        return CatalogoEmpresas(cargar_empresa(a, tipos) for a in archivos)
     except ValueError as error:
         if isinstance(error, ConfiguracionInvalida):
             raise

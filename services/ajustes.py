@@ -42,3 +42,14 @@ class AjustesProveedores(BaseSettings):
     prioridad_externa: Literal["activa", "ninguna"] = "activa"
     """Con "ninguna" toda empresa prioriza con sus reglas; las pruebas la usan para no
     depender de un servicio que puede estar arriba o no."""
+
+
+class AjustesConfiguracion(BaseSettings):
+    """De dónde se cargan las empresas: así cada despliegue trae las suyas sin tocar el repo."""
+
+    model_config = SettingsConfigDict(
+        env_file=ARCHIVO_ENV, env_file_encoding="utf-8", extra="ignore"
+    )
+
+    carpeta_empresas: Path | None = None
+    """Sin valor, configuracion/empresas/ del repositorio."""

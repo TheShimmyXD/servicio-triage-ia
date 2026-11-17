@@ -13,7 +13,7 @@ from pydantic import ValidationError
 
 from app.cortocircuito import AnalizadorConCortocircuito, ProveedorConCortocircuito
 from app.triage import CasoDeUsoTriage
-from services.ajustes import AjustesLLM, AjustesProveedores
+from services.ajustes import AjustesConfiguracion, AjustesLLM, AjustesProveedores
 from services.analizador_llm import crear_analizador
 from services.configuracion_empresas import (
     CARPETA_POR_DEFECTO,
@@ -40,7 +40,7 @@ def construir_triage(
     ajustes_llm: AjustesLLM | None = None,
     ajustes_proveedores: AjustesProveedores | None = None,
 ) -> CasoDeUsoTriage:
-    carpeta = carpeta_empresas or CARPETA_POR_DEFECTO
+    carpeta = carpeta_empresas or AjustesConfiguracion().carpeta_empresas or CARPETA_POR_DEFECTO
     try:
         catalogo = cargar_catalogo(carpeta)
         plataformas = {e.nombre: crear_plataforma(e.plataforma) for e in catalogo.empresas}

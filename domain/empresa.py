@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from domain.contrato import ProximoPaso
+from domain.documento_cliente import TiposDocumento
 from domain.informacion_minima import REQUERIDOS_POR_DEFECTO, ElementoMinimo
 from domain.prioridad import ReglasPrioridad
 from domain.texto import normalizar_nombre
@@ -68,6 +69,8 @@ class ConfiguracionEmpresa:
     informacion_minima: ReglasInformacionMinima
     plataforma: ConfiguracionPlataforma
     proveedor_prioridad: ConfiguracionProveedorPrioridad
+    tipos_documento: TiposDocumento
+    """La lista global de tipos de documento: la usan las reglas, el LLM y su verificación."""
 
     @property
     def nombres_categorias(self) -> tuple[str, ...]:

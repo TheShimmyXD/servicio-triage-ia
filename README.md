@@ -53,6 +53,7 @@ configurables, que son auditables y repetibles.
 | `services/` | Adaptadores: LLM, carga de los YAML, plataformas, servicio de prioridad, memoria. |
 | `entrypoints/api/` | La API FastAPI y sus esquemas de entrada, salida y error. |
 | `configuracion/empresas/` | Un YAML por empresa. |
+| `configuracion/tipos_documento.yaml` | Los tipos de documento que se reconocen, para todas las empresas. |
 | `simuladores/` | El servicio de prioridad de MENSAJERIA DEL VALLE, simulado. |
 | `tests/` | Pruebas por capa, sin red. |
 | `docs/` | Documento técnico (PDF) y su fuente en Markdown. |
@@ -103,6 +104,7 @@ Se leen del `.env` o del entorno (el entorno manda).
 | `LLM_FALLAS_PARA_ABRIR` | `3` | Fallas seguidas del LLM que abren el cortocircuito. |
 | `LLM_PAUSA_CORTOCIRCUITO_S` | `30` | Segundos en que, abierto el cortocircuito, se usan las reglas sin llamar al LLM. |
 | `PRIORIDAD_EXTERNA` | `activa` | `activa` consulta los servicios de prioridad de los clientes; `ninguna` usa siempre las reglas. |
+| `CARPETA_EMPRESAS` | `configuracion/empresas` | Carpeta de la que se cargan los YAML de empresa; así cada despliegue trae las suyas sin tocar el repositorio. |
 
 La URL, el timeout y los reintentos de cada servicio de prioridad van en el YAML de su empresa.
 
@@ -208,8 +210,9 @@ curl -s -X POST localhost:8000/solicitudes -H "Content-Type: application/json" -
 
 ## Cómo extenderlo
 
-Todo se hace en `configuracion/empresas/`; el servicio valida los YAML al arrancar y no
-arranca si alguno tiene un error (el mensaje dice el archivo y el campo).
+Todo se hace en `configuracion/empresas/` (o en la carpeta de `CARPETA_EMPRESAS`) y en
+`configuracion/tipos_documento.yaml`; el servicio valida los YAML al arrancar y no arranca si
+alguno tiene un error (el mensaje dice el archivo y el campo).
 
 **Agregar una empresa.** Crear un YAML nuevo y reiniciar el servicio. Ejemplo mínimo:
 
@@ -276,6 +279,18 @@ proveedor_prioridad:
 ```
 
 Un contrato distinto se resuelve con un adaptador que cumpla `ProveedorPrioridad`.
+
+**Agregar un tipo de documento.** Sumarlo a `configuracion/tipos_documento.yaml`: lo usan las
+reglas, las instrucciones del LLM y la verificación del documento que el LLM propone. La
+etiqueta es una expresión regular sobre el texto en minúsculas y sin tildes; ante dos
+etiquetas en la misma posición gana la primera de la lista.
+
+```yaml
+  - codigo: PPT
+    nombre: permiso por protección temporal
+    etiqueta: 'permiso por proteccion temporal|\bppt\b'
+    formato: numerico   # o alfanumerico (pasaporte), con_digito_verificacion (NIT)
+```
 
 ## Manejo de errores
 
@@ -347,7 +362,8 @@ función del dominio:
 - **Información mínima:** qué pasó, cuándo y qué necesita, detectados por marcadores del
   español más las frases de cada empresa. Un texto de menos de 5 palabras se cierra siempre.
   SALUD INTEGRAL DEL LLANO no exige «cuándo».
-- **Documento:** CC (el del ejemplo), CE, NIT, TI y PA. Si hay varios, gana el primero.
+- **Documento:** CC (el del ejemplo), CE, NIT, TI y PA, en `configuracion/tipos_documento.yaml`.
+  Si hay varios, gana el primero.
 - **Estado:** `pendiente` en `GESTION_EXTERNA`, `cerrado` en los otros dos pasos y
   `error_plataforma` si el caso no se pudo crear.
 - **Prioridad:** base por categoría y la señal más fuerte del texto; una señal nunca la baja.
@@ -377,7 +393,7 @@ En Windows: `.venv\Scripts\python -m pytest` y `.venv\Scripts\python -m ruff che
 GitHub Actions corre lo mismo (`ruff check`, `ruff format --check` y `pytest`) en cada cambio a
 `main`: `.github/workflows/pruebas.yml`.
 
-160 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
+165 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
 respuesta real de Groq guardada en `tests/fixtures/` comprueba el análisis de su formato.
 
 | Carpeta | Qué cubre |

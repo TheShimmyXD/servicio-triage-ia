@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from domain.contrato import Prioridad, ProximoPaso
 from domain.prioridad import ReglasPrioridad, SenalPrioridad
+from services.configuracion_empresas import cargar_tipos_documento
+
+# La lista global de tipos de documento, tal como la carga el servicio.
+TIPOS = cargar_tipos_documento()
 
 # Ejemplo de INPUT del enunciado, tal cual (con sus errores de tipeo).
 TEXTO_JUANA = (

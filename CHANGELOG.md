@@ -18,3 +18,5 @@
 - GitHub Actions con `ruff` y `pytest` en cada cambio a `main`.
 - Cortocircuito del servicio de prioridad de cada cliente, con `fallas_para_abrir` y `pausa_s`
   en su YAML.
+- Tipos de documento en `configuracion/tipos_documento.yaml` y carpeta de empresas por
+  `CARPETA_EMPRESAS`.

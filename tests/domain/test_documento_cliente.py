@@ -4,11 +4,11 @@ import pytest
 
 from domain.contrato import DocumentoCliente
 from domain.documento_cliente import extraer_documento
-from tests.domain.datos import TEXTO_JUANA
+from tests.domain.datos import TEXTO_JUANA, TIPOS
 
 
 def test_juana_da_cedula_con_su_numero():
-    assert extraer_documento(TEXTO_JUANA) == DocumentoCliente("CC", "102045678")
+    assert extraer_documento(TEXTO_JUANA, TIPOS) == DocumentoCliente("CC", "102045678")
 
 
 @pytest.mark.parametrize(
@@ -27,17 +27,17 @@ def test_juana_da_cedula_con_su_numero():
     ],
 )
 def test_tipos_de_documento(texto, esperado):
-    assert extraer_documento(texto) == esperado
+    assert extraer_documento(texto, TIPOS) == esperado
 
 
 def test_sin_documento_devuelve_none():
-    assert extraer_documento("La estufa no prende desde ayer, necesito revisión") is None
+    assert extraer_documento("La estufa no prende desde ayer, necesito revisión", TIPOS) is None
 
 
 def test_numero_corto_no_es_documento():
-    assert extraer_documento("cc 1234 por favor") is None
+    assert extraer_documento("cc 1234 por favor", TIPOS) is None
 
 
 def test_gana_el_documento_que_aparece_primero():
     texto = "NIT 900123456 de la empresa; contacto con cédula 102045678"
-    assert extraer_documento(texto) == DocumentoCliente("NIT", "900123456")
+    assert extraer_documento(texto, TIPOS) == DocumentoCliente("NIT", "900123456")

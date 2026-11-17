@@ -1,0 +1,28 @@
+# Tipos de documento que el servicio reconoce, para todas las empresas.
+# El enunciado solo muestra la cédula (CC); los demás son supuesto (ver README).
+#
+# - codigo: el que llega a la plataforma ("CC").
+# - nombre: cómo se le explica al LLM.
+# - etiqueta: expresión regular sobre el texto en minúsculas y sin tildes.
+# - formato: numerico (por defecto), alfanumerico (pasaporte) o con_digito_verificacion (NIT).
+#
+# El orden importa: ante dos etiquetas en la misma posición gana la primera, por eso
+# "cedula de extranjeria" (CE) va antes que "cedula" sola (CC).
+tipos:
+  - codigo: CE
+    nombre: cédula de extranjería
+    etiqueta: 'cedula de extranjeria|\bc\.\s?e\b\.?|\bce\b'
+  - codigo: CC
+    nombre: cédula de ciudadanía
+    etiqueta: 'cedula de ciudadania|cedula|\bc\.\s?c\b\.?|\bcc\b'
+  - codigo: NIT
+    nombre: NIT
+    etiqueta: '\bnit\b'
+    formato: con_digito_verificacion
+  - codigo: TI
+    nombre: tarjeta de identidad
+    etiqueta: 'tarjeta de identidad|\bt\.\s?i\b\.?'
+  - codigo: PA
+    nombre: pasaporte
+    etiqueta: 'pasaporte'
+    formato: alfanumerico
