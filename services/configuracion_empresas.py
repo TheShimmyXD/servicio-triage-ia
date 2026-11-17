@@ -74,6 +74,8 @@ class _ProveedorHttp(_Estricto):
     url: Annotated[str, Field(pattern=r"^https?://")]
     timeout_s: float = Field(default=2.0, gt=0, le=30)
     reintentos: int = Field(default=2, ge=0, le=5)
+    fallas_para_abrir: int = Field(default=3, ge=1, le=20)
+    pausa_s: float = Field(default=30.0, gt=0, le=600)
 
 
 class _Empresa(_Estricto):
@@ -141,6 +143,8 @@ class _Empresa(_Estricto):
                     url=proveedor.url,
                     timeout_s=proveedor.timeout_s,
                     reintentos=proveedor.reintentos,
+                    fallas_para_abrir=proveedor.fallas_para_abrir,
+                    pausa_s=proveedor.pausa_s,
                 )
                 if isinstance(proveedor, _ProveedorHttp)
                 else ConfiguracionProveedorPrioridad()

@@ -77,6 +77,8 @@ def test_mensajeria_del_valle_usa_su_servicio_de_prioridad():
     assert mdv.proveedor_prioridad.tipo == "http"
     assert mdv.proveedor_prioridad.url == "http://127.0.0.1:8001/prioridad"
     assert mdv.proveedor_prioridad.reintentos == 2
+    assert mdv.proveedor_prioridad.fallas_para_abrir == 3
+    assert mdv.proveedor_prioridad.pausa_s == 30
     gases = cargar_catalogo().obtener("GASES DEL ORINOCO")
     assert gases.proveedor_prioridad.tipo == "reglas"
 
@@ -131,6 +133,16 @@ def test_proveedor_http_exige_url(tmp_path):
     contenido = EMPRESA_MINIMA.format(nombre="HTTP") + "proveedor_prioridad:\n  tipo: http\n"
     with pytest.raises(ConfiguracionInvalida, match="url"):
         cargar_empresa(_escribir(tmp_path, "http.yaml", contenido))
+
+
+def test_cortocircuito_del_proveedor_por_defecto_y_rango(tmp_path):
+    base = EMPRESA_MINIMA.format(nombre="HTTP") + (
+        "proveedor_prioridad:\n  tipo: http\n  url: http://cliente/prioridad\n"
+    )
+    proveedor = cargar_empresa(_escribir(tmp_path, "a.yaml", base)).proveedor_prioridad
+    assert (proveedor.fallas_para_abrir, proveedor.pausa_s) == (3, 30.0)
+    with pytest.raises(ConfiguracionInvalida, match="fallas_para_abrir"):
+        cargar_empresa(_escribir(tmp_path, "b.yaml", base + "  fallas_para_abrir: 0\n"))
 
 
 def test_rechaza_empresa_repetida_y_carpeta_vacia(tmp_path):

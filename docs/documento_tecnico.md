@@ -138,12 +138,12 @@ La estrategia es **híbrida**: el modelo de lenguaje interpreta el texto y las r
 | Solicitud repetida | Si el texto es el mismo, devuelve el resultado ya guardado sin consultar al modelo ni crear otro caso. Si el texto cambió, la rechaza (409). |
 | La empresa no existe | Responde 404 con la lista de empresas válidas. |
 | Falla el modelo | Resuelve con las reglas, con la misma forma de respuesta; tras tres fallas seguidas no lo llama durante 30 s. |
-| El servicio de prioridad del cliente no responde | Reintenta según el archivo de la empresa y luego prioriza con las reglas, explicándolo en la justificación. |
+| El servicio de prioridad del cliente no responde | Reintenta según el archivo de la empresa y luego prioriza con las reglas, explicándolo en la justificación; tras tres consultas seguidas sin respuesta no lo llama durante 30 s (ambos valores, por empresa). |
 | Entrada inválida o error imprevisto | Responde 422 indicando el campo y el problema; un error imprevisto devuelve 500 y queda en el log. |
 
 Cada error trae un código legible (como `EMPRESA_NO_PARAMETRIZADA`) y un mensaje, descritos en el README.
 
-Para el monitoreo, el servicio deja en el log cada intento fallido contra una plataforma (con la empresa, la solicitud y el número de intento), cada llamada al modelo con su latencia y sus tokens, y cada documento que el modelo propuso pero no aparecía en el texto. Además, el endpoint `/metricas` informa por empresa cuántos casos se crearon, cuántos intentos fallaron, cuántos casos no se pudieron crear, cuántos duplicados y conflictos hubo y cuántas veces falló el modelo, y `/salud` indica si el servicio está arriba. El repositorio incluye 155 pruebas automáticas, organizadas por capa y sin acceso a red.
+Para el monitoreo, el servicio deja en el log cada intento fallido contra una plataforma (con la empresa, la solicitud y el número de intento), cada llamada al modelo con su latencia y sus tokens, y cada documento que el modelo propuso pero no aparecía en el texto. Además, el endpoint `/metricas` informa por empresa cuántos casos se crearon, cuántos intentos fallaron, cuántos casos no se pudieron crear, cuántos duplicados y conflictos hubo y cuántas veces falló el modelo, y `/salud` indica si el servicio está arriba. El repositorio incluye 160 pruebas automáticas, organizadas por capa y sin acceso a red.
 
 ## 6. Propuesta de despliegue en la nube
 

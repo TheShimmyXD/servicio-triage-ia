@@ -53,6 +53,10 @@ class ConfiguracionProveedorPrioridad:
     url: str | None = None
     timeout_s: float = 2.0
     reintentos: int = 0
+    fallas_para_abrir: int = 3
+    """Veces seguidas sin respuesta que abren su cortocircuito."""
+    pausa_s: float = 30.0
+    """Segundos en que, abierto el cortocircuito, se usan las reglas sin llamarlo."""
 
 
 @dataclass(frozen=True)

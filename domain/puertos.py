@@ -62,6 +62,10 @@ class ErrorProveedorPrioridad(RuntimeError):
     """El servicio de prioridad del cliente falló; se usan las reglas de la empresa."""
 
 
+class ErrorProveedorPrioridadSinRespuesta(ErrorProveedorPrioridad):
+    """No respondió tras sus reintentos (timeout, red o 5xx): cuenta para el cortocircuito."""
+
+
 class ProveedorPrioridad(Protocol):
     def obtener(
         self,

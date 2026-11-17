@@ -18,7 +18,7 @@ from pydantic import BaseModel, ValidationError
 
 from domain.contrato import DocumentoCliente, Prioridad
 from domain.empresa import ConfiguracionEmpresa
-from domain.puertos import ErrorProveedorPrioridad
+from domain.puertos import ErrorProveedorPrioridad, ErrorProveedorPrioridadSinRespuesta
 
 registro = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ class ProveedorPrioridadHTTP:
         # El motivo técnico ya quedó en el log de cada intento; la justificación que lee
         # el analista solo necesita saber que el servicio no respondió.
         veces = "1 intento" if intentos == 1 else f"{intentos} intentos"
-        raise ErrorProveedorPrioridad(f"no respondió tras {veces}")
+        raise ErrorProveedorPrioridadSinRespuesta(f"no respondió tras {veces}")
 
     def _pedir(self, url: str, pedido: dict[str, str | None], timeout_s: float) -> Prioridad:
         try:

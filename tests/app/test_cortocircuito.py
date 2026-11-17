@@ -1,18 +1,26 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
-from app.cortocircuito import AnalizadorConCortocircuito
+from app.cortocircuito import AnalizadorConCortocircuito, ProveedorConCortocircuito
 from app.triage import CasoDeUsoTriage
-from domain.contrato import Solicitud
-from domain.puertos import AnalisisLLM, ErrorLLM
+from domain.contrato import DocumentoCliente, Prioridad, Solicitud
+from domain.puertos import AnalisisLLM, ErrorLLM, ErrorProveedorPrioridad
 from services.configuracion_empresas import cargar_catalogo
 from services.repositorio_memoria import RepositorioSolicitudesMemoria
-from tests.app.falsos import AnalizadorFalso, PlataformaFalsa
+from tests.app.falsos import AnalizadorFalso, PlataformaFalsa, ProveedorPrioridadFalso
 from tests.domain.datos import TEXTO_JUANA
 
 CATALOGO = cargar_catalogo()
 GAS = CATALOGO.obtener("GASES DEL ORINOCO")
+MDV = CATALOGO.obtener("MENSAJERIA DEL VALLE")
+DOCUMENTO = DocumentoCliente("CC", "1144556677")
+TEXTO_MDV = (
+    "Mi paquete no ha llegado y ya pasó una semana desde la fecha prometida, necesito "
+    "saber qué pasó. Mi cédula es 1144556677"
+)
 ANALISIS = AnalisisLLM(
     categoria="Incidente técnico",
     informacion_suficiente=True,
@@ -91,3 +99,60 @@ def test_triage_con_llm_caido_responde_con_reglas_sin_llamarlo():
         resultado = triage.ejecutar(Solicitud("GASES DEL ORINOCO", f"REQ-{numero}", TEXTO_JUANA))
         assert resultado.solicitud_tipo == "Incidente técnico"
     assert falso.llamados == 3
+
+
+def _pedir_prioridad(proveedor: ProveedorConCortocircuito, empresa, veces: int) -> None:
+    for _ in range(veces):
+        with pytest.raises(ErrorProveedorPrioridad):
+            proveedor.obtener(empresa, DOCUMENTO, "Retraso en entrega")
+
+
+def test_proveedor_caido_abre_su_circuito_y_deja_de_llamarlo():
+    falso, reloj = ProveedorPrioridadFalso(sin_respuesta=True), Reloj()
+    proveedor = ProveedorConCortocircuito(falso, reloj)
+    _pedir_prioridad(proveedor, MDV, 3)
+    assert proveedor.circuito(MDV).abierto and len(falso.pedidos) == 3
+    _pedir_prioridad(proveedor, MDV, 5)
+    assert len(falso.pedidos) == 3
+    reloj.ahora += 31
+    falso.sin_respuesta = False
+    assert proveedor.obtener(MDV, DOCUMENTO, "Retraso en entrega") is Prioridad.ALTA
+    assert not proveedor.circuito(MDV).abierto
+
+
+def test_n_y_x_salen_del_yaml_de_cada_empresa():
+    corta = replace(
+        MDV, proveedor_prioridad=replace(MDV.proveedor_prioridad, fallas_para_abrir=1, pausa_s=5)
+    )
+    otra = replace(MDV, nombre="OTRA EMPRESA")
+    falso, reloj = ProveedorPrioridadFalso(sin_respuesta=True), Reloj()
+    proveedor = ProveedorConCortocircuito(falso, reloj)
+    _pedir_prioridad(proveedor, corta, 1)
+    assert proveedor.circuito(corta).abierto
+    # El circuito es por empresa: la caída de un cliente no corta a los demás.
+    assert not proveedor.circuito(otra).abierto
+    reloj.ahora += 6
+    assert not proveedor.circuito(corta).abierto
+
+
+def test_un_rechazo_no_cuenta_como_caida():
+    falso = ProveedorPrioridadFalso(falla=True)
+    proveedor = ProveedorConCortocircuito(falso, Reloj())
+    _pedir_prioridad(proveedor, MDV, 5)
+    assert not proveedor.circuito(MDV).abierto and len(falso.pedidos) == 5
+
+
+def test_triage_con_proveedor_caido_usa_reglas_sin_llamarlo():
+    falso = ProveedorPrioridadFalso(sin_respuesta=True)
+    triage = CasoDeUsoTriage(
+        CATALOGO,
+        {nombre: PlataformaFalsa("EXT") for nombre in CATALOGO.nombres},
+        None,
+        proveedores_prioridad={"http": ProveedorConCortocircuito(falso, Reloj())},
+        repositorio=RepositorioSolicitudesMemoria(),
+    )
+    for numero in range(6):
+        resultado = triage.ejecutar(Solicitud("MENSAJERIA DEL VALLE", f"M-{numero}", TEXTO_MDV))
+        assert "no se usó el servicio de prioridad del cliente" in resultado.justificacion
+    assert len(falso.pedidos) == 3
+    assert "se volverá a consultar" in resultado.justificacion

@@ -12,6 +12,7 @@ from domain.puertos import (
     ErrorLLM,
     ErrorPlataforma,
     ErrorProveedorPrioridad,
+    ErrorProveedorPrioridadSinRespuesta,
 )
 
 
@@ -49,6 +50,7 @@ class PlataformaFalsa:
 class ProveedorPrioridadFalso:
     prioridad: Prioridad = Prioridad.ALTA
     falla: bool = False
+    sin_respuesta: bool = False
     pedidos: list[tuple[DocumentoCliente | None, str | None]] = field(default_factory=list)
 
     def obtener(
@@ -58,6 +60,8 @@ class ProveedorPrioridadFalso:
         categoria: str | None,
     ) -> Prioridad:
         self.pedidos.append((documento, categoria))
+        if self.sin_respuesta:
+            raise ErrorProveedorPrioridadSinRespuesta("no respondió tras 3 intentos")
         if self.falla:
-            raise ErrorProveedorPrioridad("timeout tras 2 reintentos")
+            raise ErrorProveedorPrioridad("rechazó el pedido")
         return self.prioridad

@@ -16,3 +16,5 @@
 - README con la URL del repositorio en las instrucciones de instalación.
 - `Dockerfile` y `docker-compose.yml`: servicio de triage y simulador de MENSAJERIA DEL VALLE.
 - GitHub Actions con `ruff` y `pytest` en cada cambio a `main`.
+- Cortocircuito del servicio de prioridad de cada cliente, con `fallas_para_abrir` y `pausa_s`
+  en su YAML.

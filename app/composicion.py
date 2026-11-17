@@ -11,7 +11,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from app.cortocircuito import AnalizadorConCortocircuito
+from app.cortocircuito import AnalizadorConCortocircuito, ProveedorConCortocircuito
 from app.triage import CasoDeUsoTriage
 from services.ajustes import AjustesLLM, AjustesProveedores
 from services.analizador_llm import crear_analizador
@@ -58,9 +58,12 @@ def construir_triage(
         analizador = AnalizadorConCortocircuito(
             analizador, ajustes.llm_fallas_para_abrir, ajustes.llm_pausa_cortocircuito_s
         )
-    # Un adaptador por tipo; la URL, el timeout y los reintentos van en el YAML de cada empresa.
+    # Un adaptador por tipo; la URL, el timeout, los reintentos y el cortocircuito van en el
+    # YAML de cada empresa.
     proveedores_prioridad = (
-        {"http": ProveedorPrioridadHTTP()} if proveedores.prioridad_externa == "activa" else {}
+        {"http": ProveedorConCortocircuito(ProveedorPrioridadHTTP())}
+        if proveedores.prioridad_externa == "activa"
+        else {}
     )
     registro.info(
         "arranque empresas=%d carpeta=%s llm=%s prioridad_externa=%s",

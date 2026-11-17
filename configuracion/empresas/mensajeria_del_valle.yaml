@@ -52,3 +52,6 @@ proveedor_prioridad:
   url: http://127.0.0.1:8001/prioridad
   timeout_s: 2
   reintentos: 2
+  # Tras 3 consultas seguidas sin respuesta, 30 s con las reglas sin llamarlo.
+  fallas_para_abrir: 3
+  pausa_s: 30

@@ -271,6 +271,8 @@ proveedor_prioridad:
   url: http://127.0.0.1:8001/prioridad
   timeout_s: 2
   reintentos: 2
+  fallas_para_abrir: 3   # consultas seguidas sin respuesta que abren el cortocircuito
+  pausa_s: 30            # segundos con las reglas sin llamarlo
 ```
 
 Un contrato distinto se resuelve con un adaptador que cumpla `ProveedorPrioridad`.
@@ -314,7 +316,10 @@ seguidas (`LLM_FALLAS_PARA_ABRIR`) se abre un cortocircuito: durante 30 s
 no suma el timeout a cada solicitud. Luego una llamada de prueba decide si se cierra.
 
 **El servicio de prioridad del cliente no responde.** Se reintenta según su YAML y luego se
-prioriza con las reglas; la justificación dice por qué.
+prioriza con las reglas; la justificación dice por qué. Cada empresa tiene su propio
+cortocircuito: tras `fallas_para_abrir` (3) consultas seguidas sin respuesta, durante `pausa_s`
+(30 s) se prioriza con las reglas sin llamarlo, y la caída de un cliente no afecta a los demás.
+Un rechazo (4xx) o una respuesta sin prioridad válida no cuentan: el servicio sí respondió.
 
 **Entrada inválida.** 422 `ENTRADA_INVALIDA` con el campo y el problema. Un error no
 previsto devuelve 500 `ERROR_INTERNO` y queda en el log.
@@ -372,14 +377,14 @@ En Windows: `.venv\Scripts\python -m pytest` y `.venv\Scripts\python -m ruff che
 GitHub Actions corre lo mismo (`ruff check`, `ruff format --check` y `pytest`) en cada cambio a
 `main`: `.github/workflows/pruebas.yml`.
 
-155 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
+160 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
 respuesta real de Groq guardada en `tests/fixtures/` comprueba el análisis de su formato.
 
 | Carpeta | Qué cubre |
 |---|---|
 | `tests/domain/` | Contrato, documento del cliente, información mínima, prioridad, próximo paso, justificación y duplicados. |
 | `tests/services/` | Carga y validación de los YAML, analizador del LLM (salidas válidas e inválidas), plataformas y proveedor HTTP. |
-| `tests/app/` | El caso de uso completo, los reintentos, el cortocircuito del LLM y el armado del servicio. |
+| `tests/app/` | El caso de uso completo, los reintentos, los cortocircuitos del LLM y del servicio de prioridad, y el armado del servicio. |
 | `tests/entrypoints/` | La API: REQ-001, errores 404, 409 y 422, métricas. |
 | `tests/simuladores/` | El servicio de prioridad de MENSAJERIA DEL VALLE. |
 | `tests/evaluacion/` | Que las etiquetas del conjunto coincidan con los YAML de las empresas. |
