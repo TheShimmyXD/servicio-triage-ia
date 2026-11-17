@@ -40,6 +40,7 @@ from domain.informacion_minima import (
     evaluar_informacion_minima,
     extraer_hecho_principal,
     hecho_fiel_al_texto,
+    reglas_respaldan_suficiencia,
 )
 from domain.justificacion import construir_justificacion
 from domain.prioridad import DecisionPrioridad, calcular_prioridad
@@ -121,23 +122,48 @@ class CasoDeUsoTriage:
                 if compartido.usuarios == 0:
                     del self._candados[clave]
 
-    def _triar(self, empresa: ConfiguracionEmpresa, solicitud: Solicitud) -> ResultadoTriage:
+    def _evaluar_suficiencia(
+        self,
+        analisis: AnalisisLLM | None,
+        empresa: ConfiguracionEmpresa,
+        solicitud: Solicitud,
+    ) -> tuple[bool, str | None, str | None]:
+        """Pasos 1 y 2: si hay información mínima, la categoría y el hecho que se cita."""
         texto = solicitud.solicitud_descripcion
-        analisis = self._analizar_con_llm(texto, empresa, solicitud.solicitud_id)
-
-        documento = _documento_verificado(analisis, texto, empresa.tipos_documento)
-        if analisis is not None:
-            suficiente = analisis.informacion_suficiente
-            categoria: str | None = analisis.categoria
-            hecho = _hecho_verificado(analisis, texto, solicitud.solicitud_id)
-        else:
-            reglas_info = empresa.informacion_minima
+        reglas_info = empresa.informacion_minima
+        if analisis is None:
             categoria = clasificar_por_palabras_clave(texto, empresa.categorias)
             # La categoría va primero: de ella depende qué datos exige el paso 1.
             suficiente = evaluar_informacion_minima(
                 texto, reglas_info.requeridos_para(categoria), reglas_info.frases_extra
             ).suficiente
-            hecho = extraer_hecho_principal(texto)
+            return suficiente, categoria, extraer_hecho_principal(texto)
+
+        hecho_llm = _hecho_del_llm(analisis, texto, solicitud.solicitud_id)
+        suficiente = analisis.informacion_suficiente
+        # Las reglas controlan al LLM, no solo lo respaldan: sin una prueba en el texto,
+        # un "suficiente" pedido por el propio texto no abre un caso.
+        if suficiente and not reglas_respaldan_suficiencia(
+            texto,
+            reglas_info.requeridos_para(analisis.categoria),
+            reglas_info.frases_extra,
+            hecho_llm,
+        ):
+            self.metricas.sumar(Evento.SUFICIENCIA_NO_RESPALDADA, empresa.nombre)
+            registro.warning(
+                "llm_suficiencia_no_respaldada empresa=%s solicitud=%s",
+                empresa.nombre,
+                solicitud.solicitud_id,
+            )
+            suficiente = False
+        return suficiente, analisis.categoria, hecho_llm or extraer_hecho_principal(texto)
+
+    def _triar(self, empresa: ConfiguracionEmpresa, solicitud: Solicitud) -> ResultadoTriage:
+        texto = solicitud.solicitud_descripcion
+        analisis = self._analizar_con_llm(texto, empresa, solicitud.solicitud_id)
+
+        documento = _documento_verificado(analisis, texto, empresa.tipos_documento)
+        suficiente, categoria, hecho = self._evaluar_suficiencia(analisis, empresa, solicitud)
         if not suficiente:
             # El esquema obliga al LLM a elegir una categoría aun sin datos, y las palabras
             # clave sueltas engañan ("factura" en una consulta): un cierre no la informa.
@@ -256,8 +282,8 @@ class CasoDeUsoTriage:
         )
 
 
-def _hecho_verificado(analisis: AnalisisLLM, texto: str, solicitud_id: str) -> str | None:
-    """Cita el hecho del LLM solo si sale del texto; si no, el de las reglas.
+def _hecho_del_llm(analisis: AnalisisLLM, texto: str, solicitud_id: str) -> str | None:
+    """El hecho del LLM solo si sale del texto; si no, None (quien llama usa las reglas).
 
     La justificación lo pone entre comillas y llega a la plataforma del cliente: una
     paráfrasis o un texto inyectado no pueden pasar por palabras del cliente.
@@ -265,7 +291,7 @@ def _hecho_verificado(analisis: AnalisisLLM, texto: str, solicitud_id: str) -> s
     hecho = hecho_fiel_al_texto(analisis.hechos, texto)
     if hecho is None and analisis.hechos:
         registro.warning("llm_hecho_no_verificado solicitud=%s", solicitud_id)
-    return hecho or extraer_hecho_principal(texto)
+    return hecho
 
 
 def _documento_verificado(

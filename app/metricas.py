@@ -23,6 +23,8 @@ class Evento(StrEnum):
     """El LLM falló o respondió fuera del esquema; atendieron las reglas."""
     PRIORIDAD_EXTERNA_FALLIDA = "prioridad_externa_fallidos"
     """El servicio de prioridad del cliente no respondió; la prioridad salió de las reglas."""
+    SUFICIENCIA_NO_RESPALDADA = "llm_suficiencia_no_respaldada"
+    """El LLM dijo "suficiente" sin respaldo en el texto (posible inyección): se cerró."""
 
 
 class Metricas:

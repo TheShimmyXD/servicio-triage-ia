@@ -20,3 +20,6 @@
   en su YAML.
 - Tipos de documento en `configuracion/tipos_documento.yaml` y carpeta de empresas por
   `CARPETA_EMPRESAS`.
+- Información mínima por categoría (`informacion_minima.por_categoria`) y cierre sin categoría.
+- Las reglas controlan el "suficiente" del LLM: sin "qué pasó" ni un hecho copiado del texto,
+  se cierra y se cuenta en `llm_suficiencia_no_respaldada`.

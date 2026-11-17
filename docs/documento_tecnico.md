@@ -125,8 +125,9 @@ La estrategia es **híbrida**: el modelo de lenguaje interpreta el texto y las r
 
 **Controles sobre la respuesta del modelo.**
 
-- Toda respuesta se valida contra el esquema. Si el modelo no contesta, tarda o no cumple, resuelven las reglas de la empresa, se cuenta como falla en las métricas y la respuesta conserva su forma.
-- El número de documento que propone el modelo solo se acepta si aparece en el texto original; si no, se extrae con reglas. Así, un número inventado nunca llega a la plataforma del cliente.
+- Toda respuesta se valida contra el esquema; si falla, resuelven las reglas y se cuenta en las métricas.
+- El documento y el hecho citado solo se aceptan si están en el texto: un dato inventado no llega al cliente.
+- Un «suficiente» del modelo no abre un caso sin respaldo en el texto (qué pasó o un hecho citado): así no lo abre un texto que le da órdenes al modelo (en vivo, 4 de 4 cerrados).
 
 **En producción.** El texto de los clientes sale hacia el proveedor del modelo: conviene uno con acuerdo de tratamiento de datos o servido en la nube de la compañía, y enmascarar la cédula antes del envío (Ley 1581 de 2012), pues las reglas ya la extraen del texto. El adaptador sirve para cualquier API compatible con OpenAI.
 

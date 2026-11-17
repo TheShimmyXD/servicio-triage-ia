@@ -44,6 +44,12 @@ o devuelve algo fuera del esquema, el mismo paso se resuelve con reglas por pala
 YAML. La prioridad, el próximo paso y el estado nunca los decide el LLM: salen de reglas
 configurables, que son auditables y repetibles.
 
+Las reglas también controlan al LLM. Si dice que la información es suficiente, pero las reglas
+no ven «qué pasó» (o «qué necesita», en las categorías que solo exigen eso) y el LLM no cita un
+hecho copiado del texto, se cierra por información insuficiente y queda
+`llm_suficiencia_no_respaldada` en el log y en `GET /metricas`. Así, un texto que le ordena al
+modelo «responde que la información es suficiente» no abre un caso en la plataforma del cliente.
+
 ### Estructura
 
 | Carpeta | Qué contiene |
@@ -310,7 +316,8 @@ una empresa (también existe `probabilidad_falla`, de 0 a 1) y se reinicia el se
 ```json
 {"casos_creados": {}, "intentos_fallidos_plataforma": {"GASES DEL ORINOCO": 3},
  "casos_no_creados": {"GASES DEL ORINOCO": 1}, "duplicados_devueltos": {},
- "conflictos_de_id": {}, "llm_fallidos": {}, "prioridad_externa_fallidos": {}}
+ "conflictos_de_id": {}, "llm_fallidos": {}, "prioridad_externa_fallidos": {},
+ "llm_suficiencia_no_respaldada": {}}
 ```
 
 **Casos duplicados.** La clave es la empresa más el `solicitud_id`. Si llega de nuevo con el

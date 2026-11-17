@@ -15,7 +15,7 @@ from domain.puertos import AnalisisLLM
 from services.configuracion_empresas import cargar_catalogo
 from services.repositorio_memoria import RepositorioSolicitudesMemoria
 from tests.app.falsos import AnalizadorFalso, PlataformaFalsa, ProveedorPrioridadFalso
-from tests.domain.datos import TEXTO_INCOMPLETO, TEXTO_JUANA
+from tests.domain.datos import TEXTO_INCOMPLETO, TEXTO_INYECCION, TEXTO_JUANA
 
 HOY = date(2026, 11, 17)
 REQ_001 = Solicitud("GASES DEL ORINOCO", "REQ-001", TEXTO_JUANA)
@@ -99,6 +99,36 @@ def test_hecho_del_llm_que_no_sale_del_texto_no_se_cita(hechos):
     assert hechos.strip() not in resultado.justificacion
     # Se cita el fragmento literal que extraen las reglas.
     assert "presenta fallas (no está haciendo contacto" in resultado.justificacion
+
+
+def test_inyeccion_que_convence_al_llm_cierra_sin_crear_caso(caplog):
+    analisis = AnalisisLLM(categoria="Incidente técnico", informacion_suficiente=True)
+    caso_de_uso, plataformas = _armar(AnalizadorFalso(respuesta=analisis))
+    solicitud = Solicitud("GASES DEL ORINOCO", "REQ-INY", TEXTO_INYECCION)
+    resultado = caso_de_uso.ejecutar(solicitud)
+    assert resultado.proximo_paso.value == "CIERRE_POR_INFORMACION_INSUFICIENTE"
+    assert resultado.solicitud_tipo is None
+    assert resultado.solicitud_prioridad is None
+    assert plataformas["GASES DEL ORINOCO"].casos == []
+    assert caso_de_uso.metricas.contar(Evento.SUFICIENCIA_NO_RESPALDADA) == 1
+    assert "llm_suficiencia_no_respaldada" in caplog.text
+
+
+def test_hecho_copiado_del_texto_respalda_al_llm_sin_marcadores():
+    texto = (
+        "El calentador de la casa hace un ruido extraño desde ayer en la noche. "
+        "Necesito que lo revisen."
+    )
+    analisis = AnalisisLLM(
+        categoria="Incidente técnico",
+        informacion_suficiente=True,
+        hechos="El calentador de la casa hace un ruido extraño",
+    )
+    caso_de_uso, plataformas = _armar(AnalizadorFalso(respuesta=analisis))
+    resultado = caso_de_uso.ejecutar(Solicitud("GASES DEL ORINOCO", "REQ-CAL", texto))
+    assert resultado.proximo_paso.value == "GESTION_EXTERNA"
+    assert len(plataformas["GASES DEL ORINOCO"].casos) == 1
+    assert caso_de_uso.metricas.contar(Evento.SUFICIENCIA_NO_RESPALDADA) == 0
 
 
 def test_si_el_llm_falla_se_usa_el_respaldo(caplog):
