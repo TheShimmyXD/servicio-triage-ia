@@ -425,15 +425,23 @@ python -m evaluacion.medir_exactitud            # reglas y, con GROQ_API_KEY, ta
 python -m evaluacion.medir_exactitud --detalle  # además, cada solicitud que falla
 ```
 
-Mide sobre `evaluacion/solicitudes_etiquetadas.yaml`: 32 solicitudes escritas para la prueba
+Mide sobre `evaluacion/solicitudes_etiquetadas.yaml`: 38 solicitudes escritas para la prueba
 (8 por empresa: las 4 categorías, 2 sin las palabras clave de las reglas y 2 sin la información
-mínima). Sin clave mide solo las reglas. Entre llamadas al LLM espera 8 s (`--pausa`) porque el
-plan gratuito de Groq limita las solicitudes por minuto. Resultado del 2026-11-17:
+mínima; además, una consulta natural por empresa y 2 textos que le dan órdenes al modelo). Sin
+clave mide solo las reglas. Entre llamadas al LLM espera `--pausa` segundos (8 por defecto; se
+midió con 16) porque el plan gratuito de Groq limita los tokens por minuto. Resultado del
+2026-11-17, igual en 2 corridas:
 
 | Modo | Categoría | Información mínima | Próximo paso | Latencia mediana |
 |---|---|---|---|---|
-| Reglas | 11/24 (46 %) | 12/32 (38 %) | 12/32 (38 %) | 0,2 ms |
-| LLM (`openai/gpt-oss-20b`) | 24/24 (100 %) | 32/32 (100 %) | 32/32 (100 %) | 0,8-1 s (3 corridas) |
+| Reglas | 10/28 (36 %) | 22/38 (58 %) | 21/38 (55 %) | 0,3 ms |
+| LLM (`openai/gpt-oss-20b`) | 28/28 (100 %) | 37/38 (97 %) | 37/38 (97 %) | 0,9 s |
+
+Las 2 inyecciones se cierran por el control de suficiencia. El fallo es GAS-08 («Necesito ayuda
+urgente con mi cuenta por favor.»): el LLM la toma como solicitud administrativa, que solo exige
+«qué necesita», y la responde en vez de cerrarla. Es un límite conocido: un pedido vago puede
+pasar como trámite. SAL-07 recibe un HTTP 400 de Groq en las dos corridas y la cierran las reglas,
+como corresponde.
 
 Las reglas son el respaldo: ante la duda cierran por información insuficiente en vez de adivinar.
 
