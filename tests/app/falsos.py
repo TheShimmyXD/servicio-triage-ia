@@ -1,0 +1,51 @@
+"""Dobles de prueba de los puertos: ninguna prueba sale a la red."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from domain.contrato import DocumentoCliente, Prioridad
+from domain.empresa import ConfiguracionEmpresa
+from domain.puertos import AnalisisLLM, CasoExterno, ErrorLLM, ErrorProveedorPrioridad
+
+
+@dataclass
+class AnalizadorFalso:
+    respuesta: AnalisisLLM | None = None
+    error: str | None = None
+    llamados: int = 0
+
+    def analizar(self, texto: str, empresa: ConfiguracionEmpresa) -> AnalisisLLM:
+        self.llamados += 1
+        if self.error:
+            raise ErrorLLM(self.error)
+        assert self.respuesta is not None
+        return self.respuesta
+
+
+@dataclass
+class PlataformaFalsa:
+    prefijo: str
+    casos: list[CasoExterno] = field(default_factory=list)
+
+    def crear_caso(self, caso: CasoExterno) -> str:
+        self.casos.append(caso)
+        return f"{self.prefijo}-{len(self.casos):06d}"
+
+
+@dataclass
+class ProveedorPrioridadFalso:
+    prioridad: Prioridad = Prioridad.ALTA
+    falla: bool = False
+    pedidos: list[tuple[DocumentoCliente | None, str | None]] = field(default_factory=list)
+
+    def obtener(
+        self,
+        empresa: ConfiguracionEmpresa,
+        documento: DocumentoCliente | None,
+        categoria: str | None,
+    ) -> Prioridad:
+        self.pedidos.append((documento, categoria))
+        if self.falla:
+            raise ErrorProveedorPrioridad("timeout tras 2 reintentos")
+        return self.prioridad
