@@ -100,5 +100,9 @@ class CatalogoEmpresas:
     def nombres(self) -> tuple[str, ...]:
         return tuple(sorted(e.nombre for e in self._por_nombre.values()))
 
+    @property
+    def empresas(self) -> tuple[ConfiguracionEmpresa, ...]:
+        return tuple(self._por_nombre.values())
+
     def __len__(self) -> int:
         return len(self._por_nombre)
