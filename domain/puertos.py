@@ -1,4 +1,4 @@
-"""Puertos hacia el mundo de afuera: LLM, plataformas de casos y proveedores de prioridad.
+"""Puertos hacia el mundo de afuera: LLM, plataformas, prioridad y solicitudes atendidas.
 
 El caso de uso solo conoce estas interfaces; services/ trae las implementaciones y
 app/ las conecta. Así cambiar de proveedor o sumar una plataforma no toca el triage.
@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from domain.contrato import DocumentoCliente, Prioridad
+from domain.duplicados import SolicitudAtendida
 from domain.empresa import ConfiguracionEmpresa
 
 
@@ -70,3 +71,12 @@ class ProveedorPrioridad(Protocol):
     ) -> Prioridad:
         """Prioridad según el servicio externo del cliente."""
         ...
+
+
+class RepositorioSolicitudes(Protocol):
+    """Solicitudes ya atendidas por (compania, solicitud_id). En memoria hoy; en la nube,
+    una tabla con esa clave única (por ejemplo, DynamoDB o Postgres)."""
+
+    def obtener(self, compania: str, solicitud_id: str) -> SolicitudAtendida | None: ...
+
+    def guardar(self, compania: str, solicitud_id: str, atendida: SolicitudAtendida) -> None: ...

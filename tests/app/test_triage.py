@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
 import pytest
 
+from app.metricas import Evento
 from app.triage import CasoDeUsoTriage
-from domain.contrato import Prioridad, Solicitud
+from domain.contrato import EstadoCaso, Prioridad, Solicitud
+from domain.duplicados import SolicitudEnConflicto
 from domain.empresa import EmpresaNoParametrizada
 from domain.puertos import AnalisisLLM
 from services.configuracion_empresas import cargar_catalogo
@@ -139,3 +142,58 @@ def test_si_el_servicio_del_cliente_falla_se_usan_las_reglas():
     assert resultado.solicitud_prioridad is Prioridad.MEDIA
     assert "no respondió" in resultado.justificacion
     assert "reglas de la empresa" in resultado.justificacion
+
+
+def test_plataforma_caida_responde_con_estado_y_motivo():
+    caso_de_uso, plataformas = _armar()
+    plataforma = plataformas["GASES DEL ORINOCO"]
+    plataforma.fallas_pendientes = 3
+    caso_de_uso.dormir = lambda _: None
+    resultado = caso_de_uso.ejecutar(REQ_001)
+    assert resultado.estado is EstadoCaso.ERROR_PLATAFORMA
+    assert resultado.solicitud_id_plataforma_externa is None
+    assert "tras 3 intentos (timeout de 5 s)" in resultado.justificacion
+    assert caso_de_uso.metricas.contar(Evento.CASO_NO_CREADO) == 1
+    # Reenviar la misma solicitud vuelve a intentar y, si la plataforma ya responde, crea.
+    reenvio = caso_de_uso.ejecutar(REQ_001)
+    assert reenvio.estado is EstadoCaso.PENDIENTE
+    assert reenvio.solicitud_id_plataforma_externa == "EXT-000001"
+
+
+def test_duplicado_devuelve_el_mismo_caso_sin_crear_otro():
+    caso_de_uso, plataformas = _armar()
+    primero = caso_de_uso.ejecutar(REQ_001)
+    copia = Solicitud("gases del orinoco", "REQ-001", f"  {TEXTO_JUANA}  ")
+    segundo = caso_de_uso.ejecutar(copia)
+    assert segundo == primero
+    assert plataformas["GASES DEL ORINOCO"].llamadas == 1
+    assert caso_de_uso.metricas.contar(Evento.DUPLICADO_DEVUELTO) == 1
+
+
+def test_duplicados_simultaneos_crean_un_solo_caso():
+    caso_de_uso, plataformas = _armar()
+    with ThreadPoolExecutor(max_workers=8) as hilos:
+        resultados = list(hilos.map(lambda _: caso_de_uso.ejecutar(REQ_001), range(8)))
+    assert {r.solicitud_id_plataforma_externa for r in resultados} == {"EXT-000001"}
+    assert plataformas["GASES DEL ORINOCO"].llamadas == 1
+
+
+def test_mismo_id_con_otro_texto_es_conflicto():
+    caso_de_uso, plataformas = _armar()
+    caso_de_uso.ejecutar(REQ_001)
+    with pytest.raises(SolicitudEnConflicto, match="REQ-001"):
+        caso_de_uso.ejecutar(Solicitud("GASES DEL ORINOCO", "REQ-001", TEXTO_INCOMPLETO))
+    assert plataformas["GASES DEL ORINOCO"].llamadas == 1
+
+
+def test_el_mismo_id_en_otra_empresa_no_es_duplicado():
+    caso_de_uso, _ = _armar()
+    caso_de_uso.ejecutar(REQ_001)
+    otra = caso_de_uso.ejecutar(Solicitud("RED MOVIL ANDINA", "REQ-001", TEXTO_INCOMPLETO))
+    assert otra.compania == "RED MOVIL ANDINA"
+
+
+def test_llm_caido_suma_a_las_metricas():
+    caso_de_uso, _ = _armar(analizador=AnalizadorFalso(error="timeout"))
+    caso_de_uso.ejecutar(REQ_001)
+    assert caso_de_uso.metricas.contar(Evento.LLM_FALLIDO, "GASES DEL ORINOCO") == 1

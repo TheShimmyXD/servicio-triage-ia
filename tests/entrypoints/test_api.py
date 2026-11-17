@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 from datetime import date
 
 import pytest
@@ -8,6 +9,7 @@ from fastapi.testclient import TestClient
 from app.composicion import construir_triage
 from entrypoints.api.esquemas import EJEMPLO_REQ_001
 from entrypoints.api.principal import crear_aplicacion
+from services.configuracion_empresas import CARPETA_POR_DEFECTO
 
 HOY = date(2026, 11, 17)
 CAMPOS_SALIDA = [
@@ -121,3 +123,42 @@ def test_error_inesperado_da_500_con_codigo():
     respuesta = cliente.post("/solicitudes", json=EJEMPLO_REQ_001)
     assert respuesta.status_code == 500
     assert respuesta.json()["codigo"] == "ERROR_INTERNO"
+
+
+def test_mismo_id_con_otro_texto_da_409(cliente):
+    assert cliente.post("/solicitudes", json=EJEMPLO_REQ_001).status_code == 200
+    otra = {**EJEMPLO_REQ_001, "solicitud_descripcion": "Quiero cambiar mi plan"}
+    respuesta = cliente.post("/solicitudes", json=otra)
+    assert respuesta.status_code == 409
+    assert respuesta.json()["codigo"] == "SOLICITUD_DUPLICADA"
+
+
+def test_metricas_cuentan_casos_y_duplicados(cliente):
+    cliente.post("/solicitudes", json=EJEMPLO_REQ_001)
+    cliente.post("/solicitudes", json=EJEMPLO_REQ_001)
+    metricas = cliente.get("/metricas").json()
+    assert metricas["casos_creados"] == {"GASES DEL ORINOCO": 1}
+    assert metricas["duplicados_devueltos"] == {"GASES DEL ORINOCO": 1}
+    assert metricas["casos_no_creados"] == {}
+
+
+def test_plataforma_caida_desde_el_yaml_no_tumba_la_respuesta(tmp_path):
+    for archivo in CARPETA_POR_DEFECTO.glob("*.yaml"):
+        shutil.copy(archivo, tmp_path)
+    gases = tmp_path / "gases_del_orinoco.yaml"
+    texto = gases.read_text(encoding="utf-8").replace(
+        "prefijo: ZD", "prefijo: ZD\n    probabilidad_falla: 1"
+    )
+    gases.write_text(texto, encoding="utf-8")
+    triage = construir_triage(tmp_path)
+    triage.dormir = lambda _: None
+    cliente = TestClient(crear_aplicacion(triage))
+    respuesta = cliente.post("/solicitudes", json=EJEMPLO_REQ_001)
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert cuerpo["estado"] == "error_plataforma"
+    assert cuerpo["solicitud_id_plataforma_externa"] is None
+    assert "zendesk_simulada" in cuerpo["justificacion"]
+    metricas = cliente.get("/metricas").json()
+    assert metricas["intentos_fallidos_plataforma"] == {"GASES DEL ORINOCO": 3}
+    assert metricas["casos_no_creados"] == {"GASES DEL ORINOCO": 1}

@@ -44,6 +44,9 @@ class EstadoCaso(StrEnum):
 
     PENDIENTE = "pendiente"
     CERRADO = "cerrado"
+    ERROR_PLATAFORMA = "error_plataforma"
+    """Supuesto: la gestión externa no se pudo crear tras los reintentos. El motivo va en
+    la justificación y reenviar la misma solicitud vuelve a intentarlo."""
 
 
 JUSTIFICACION_INFORMACION_INSUFICIENTE = "Información incompleta o faltante"

@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from app.composicion import construir_triage
 from app.triage import CasoDeUsoTriage
 from domain.contrato import Solicitud
+from domain.duplicados import SolicitudEnConflicto
 from domain.empresa import EmpresaNoParametrizada
 from entrypoints.api.esquemas import (
     EntradaSolicitud,
@@ -45,6 +46,10 @@ def crear_aplicacion(triage: CasoDeUsoTriage | None = None) -> FastAPI:
                 codigo=error.codigo, mensaje=str(error), empresas_validas=list(error.validas)
             ),
         )
+
+    @aplicacion.exception_handler(SolicitudEnConflicto)
+    def _solicitud_en_conflicto(_: Request, error: SolicitudEnConflicto) -> JSONResponse:
+        return _respuesta_error(409, SalidaError(codigo=error.codigo, mensaje=str(error)))
 
     @aplicacion.exception_handler(RequestValidationError)
     def _entrada_invalida(_: Request, error: RequestValidationError) -> JSONResponse:
@@ -83,13 +88,26 @@ def crear_aplicacion(triage: CasoDeUsoTriage | None = None) -> FastAPI:
         """Empresas parametrizadas: las que el servicio sabe atender."""
         return SalidaEmpresas(empresas=list(caso_de_uso.catalogo.nombres))
 
+    @aplicacion.get("/metricas")
+    def metricas() -> dict[str, dict[str, int]]:
+        """Conteo por empresa de casos creados, fallas de plataforma, duplicados y LLM caído."""
+        return caso_de_uso.metricas.foto()
+
     @aplicacion.post(
         "/solicitudes",
         response_model=SalidaTriage,
-        responses={404: {"model": SalidaError}, 422: {"model": SalidaError}},
+        responses={
+            404: {"model": SalidaError},
+            409: {"model": SalidaError},
+            422: {"model": SalidaError},
+        },
     )
     def triage_solicitud(entrada: EntradaSolicitud) -> SalidaTriage:
-        """Hace el triage de una solicitud y, si es gestión externa, crea el caso."""
+        """Hace el triage de una solicitud y, si es gestión externa, crea el caso.
+
+        Reenviar la misma solicitud devuelve el mismo resultado sin crear otro caso; el
+        mismo solicitud_id con otra descripción da 409.
+        """
         solicitud = Solicitud(**entrada.model_dump())
         resultado = caso_de_uso.ejecutar(solicitud)
         return SalidaTriage.model_validate(resultado.a_diccionario())

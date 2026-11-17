@@ -1,21 +1,39 @@
 """Caso de uso de triage: automatiza los pasos 1 a 6 del proceso para una solicitud.
 
-Orden: empresa -> análisis (LLM validado o reglas) -> información mínima -> categoría ->
-prioridad -> próximo paso -> justificación -> caso en la plataforma si es gestión externa.
-Ninguna falla de un servicio de afuera tumba la respuesta: cada uno tiene su respaldo.
+Orden: empresa -> duplicados -> análisis (LLM validado o reglas) -> información mínima ->
+categoría -> prioridad -> próximo paso -> justificación -> caso en la plataforma si es
+gestión externa. Ninguna falla de un servicio de afuera tumba la respuesta: cada uno
+tiene su respaldo, y la plataforma caída deja el estado y el motivo en la respuesta.
 """
 
 from __future__ import annotations
 
 import logging
 import re
+import threading
+import time
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 
+from app.metricas import Evento, Metricas
+from app.reintentos import PoliticaReintentos, crear_con_reintentos
 from domain.clasificacion import clasificar_por_palabras_clave
-from domain.contrato import DocumentoCliente, ProximoPaso, ResultadoTriage, Solicitud
+from domain.contrato import (
+    DocumentoCliente,
+    EstadoCaso,
+    ProximoPaso,
+    ResultadoTriage,
+    Solicitud,
+)
 from domain.documento_cliente import extraer_documento
+from domain.duplicados import (
+    AccionAnteDuplicado,
+    SolicitudAtendida,
+    SolicitudEnConflicto,
+    decidir_ante_duplicado,
+    normalizar_texto,
+)
 from domain.empresa import CatalogoEmpresas, ConfiguracionEmpresa
 from domain.informacion_minima import evaluar_informacion_minima, extraer_hecho_principal
 from domain.justificacion import construir_justificacion
@@ -29,7 +47,9 @@ from domain.puertos import (
     ErrorProveedorPrioridad,
     PlataformaCasos,
     ProveedorPrioridad,
+    RepositorioSolicitudes,
 )
+from services.repositorio_memoria import RepositorioSolicitudesMemoria
 
 registro = logging.getLogger(__name__)
 
@@ -47,10 +67,40 @@ class CasoDeUsoTriage:
     proveedores_prioridad: Mapping[str, ProveedorPrioridad] | None = None
     """Proveedores externos por tipo ("http"). El tipo "reglas" no necesita proveedor."""
     hoy: Callable[[], date] = date.today
+    repositorio: RepositorioSolicitudes = field(default_factory=RepositorioSolicitudesMemoria)
+    metricas: Metricas = field(default_factory=Metricas)
+    reintentos: PoliticaReintentos = field(default_factory=PoliticaReintentos)
+    dormir: Callable[[float], None] = time.sleep
+    """Las pruebas lo reemplazan para no esperar los reintentos."""
+    _candados: dict[tuple[str, str], threading.Lock] = field(default_factory=dict, init=False)
+    _candado_general: threading.Lock = field(default_factory=threading.Lock, init=False)
 
     def ejecutar(self, solicitud: Solicitud) -> ResultadoTriage:
         # Lanza EmpresaNoParametrizada; la puerta la traduce a una respuesta clara.
         empresa = self.catalogo.obtener(solicitud.compania)
+        clave = (empresa.nombre, solicitud.solicitud_id)
+        # Dos envíos simultáneos de la misma solicitud no deben crear dos casos.
+        with self._candado_de(clave):
+            previa = self.repositorio.obtener(*clave)
+            accion = decidir_ante_duplicado(previa, solicitud.solicitud_descripcion)
+            if accion is AccionAnteDuplicado.CONFLICTO:
+                self.metricas.sumar(Evento.CONFLICTO, empresa.nombre)
+                registro.warning("solicitud_en_conflicto empresa=%s solicitud=%s", *clave)
+                raise SolicitudEnConflicto(*clave)
+            if accion is AccionAnteDuplicado.DEVOLVER_EXISTENTE and previa is not None:
+                self.metricas.sumar(Evento.DUPLICADO_DEVUELTO, empresa.nombre)
+                registro.info("solicitud_duplicada empresa=%s solicitud=%s", *clave)
+                return previa.resultado
+            resultado = self._triar(empresa, solicitud)
+            texto = normalizar_texto(solicitud.solicitud_descripcion)
+            self.repositorio.guardar(*clave, SolicitudAtendida(texto, resultado))
+            return resultado
+
+    def _candado_de(self, clave: tuple[str, str]) -> threading.Lock:
+        with self._candado_general:
+            return self._candados.setdefault(clave, threading.Lock())
+
+    def _triar(self, empresa: ConfiguracionEmpresa, solicitud: Solicitud) -> ResultadoTriage:
         texto = solicitud.solicitud_descripcion
         analisis = self._analizar_con_llm(texto, empresa, solicitud.solicitud_id)
 
@@ -78,6 +128,7 @@ class CasoDeUsoTriage:
         justificacion = construir_justificacion(paso, categoria, decision, hecho)
 
         id_externo = None
+        estado = estado_para(paso)
         if paso is ProximoPaso.GESTION_EXTERNA:
             caso = CasoExterno(
                 compania=empresa.nombre,
@@ -88,7 +139,23 @@ class CasoDeUsoTriage:
                 descripcion=texto,
                 justificacion=justificacion,
             )
-            id_externo = self.plataformas[empresa.nombre].crear_caso(caso)
+            nombre_plataforma = empresa.plataforma.nombre
+            creacion = crear_con_reintentos(
+                self.plataformas[empresa.nombre],
+                caso,
+                nombre_plataforma,
+                self.reintentos,
+                self.metricas,
+                self.dormir,
+            )
+            id_externo = creacion.id_externo
+            if id_externo is None:
+                estado = EstadoCaso.ERROR_PLATAFORMA
+                justificacion = (
+                    f"{justificacion} No se pudo crear el caso en {nombre_plataforma} tras "
+                    f"{creacion.intentos} intentos ({creacion.motivo}); reenviar la misma "
+                    "solicitud lo vuelve a intentar."
+                )
 
         registro.info(
             "triage empresa=%s solicitud=%s fuente=%s categoria=%s paso=%s",
@@ -109,7 +176,7 @@ class CasoDeUsoTriage:
             solicitud_id_plataforma_externa=id_externo,
             proximo_paso=paso,
             justificacion=justificacion,
-            estado=estado_para(paso),
+            estado=estado,
         )
 
     def _analizar_con_llm(
@@ -121,9 +188,11 @@ class CasoDeUsoTriage:
         try:
             analisis = self.analizador.analizar(texto, empresa)
         except ErrorLLM as error:
+            self.metricas.sumar(Evento.LLM_FALLIDO, empresa.nombre)
             registro.warning("llm_fallo solicitud=%s motivo=%s", solicitud_id, error)
             return None
         if analisis.categoria not in empresa.nombres_categorias:
+            self.metricas.sumar(Evento.LLM_FALLIDO, empresa.nombre)
             # El esquema ya limita la categoría; esta revisión cubre proveedores sin esquema.
             registro.warning(
                 "llm_categoria_invalida solicitud=%s categoria=%r", solicitud_id, analisis.categoria

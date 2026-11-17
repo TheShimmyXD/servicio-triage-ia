@@ -6,7 +6,13 @@ from dataclasses import dataclass, field
 
 from domain.contrato import DocumentoCliente, Prioridad
 from domain.empresa import ConfiguracionEmpresa
-from domain.puertos import AnalisisLLM, CasoExterno, ErrorLLM, ErrorProveedorPrioridad
+from domain.puertos import (
+    AnalisisLLM,
+    CasoExterno,
+    ErrorLLM,
+    ErrorPlataforma,
+    ErrorProveedorPrioridad,
+)
 
 
 @dataclass
@@ -27,8 +33,14 @@ class AnalizadorFalso:
 class PlataformaFalsa:
     prefijo: str
     casos: list[CasoExterno] = field(default_factory=list)
+    fallas_pendientes: int = 0
+    llamadas: int = 0
 
     def crear_caso(self, caso: CasoExterno) -> str:
+        self.llamadas += 1
+        if self.fallas_pendientes > 0:
+            self.fallas_pendientes -= 1
+            raise ErrorPlataforma("timeout de 5 s")
         self.casos.append(caso)
         return f"{self.prefijo}-{len(self.casos):06d}"
 

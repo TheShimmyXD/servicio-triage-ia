@@ -19,7 +19,11 @@ from services.configuracion_empresas import (
     ConfiguracionInvalida,
     cargar_catalogo,
 )
-from services.plataformas_simuladas import PlataformaDesconocida, crear_plataforma
+from services.plataformas_simuladas import (
+    ParametrosPlataformaInvalidos,
+    PlataformaDesconocida,
+    crear_plataforma,
+)
 
 registro = logging.getLogger(__name__)
 
@@ -36,7 +40,12 @@ def construir_triage(
         catalogo = cargar_catalogo(carpeta)
         plataformas = {e.nombre: crear_plataforma(e.plataforma) for e in catalogo.empresas}
         ajustes = ajustes_llm or AjustesLLM()
-    except (ConfiguracionInvalida, PlataformaDesconocida, ValidationError) as error:
+    except (
+        ConfiguracionInvalida,
+        PlataformaDesconocida,
+        ParametrosPlataformaInvalidos,
+        ValidationError,
+    ) as error:
         raise ErrorArranque(str(error)) from error
     analizador = crear_analizador(ajustes)
     registro.info(
