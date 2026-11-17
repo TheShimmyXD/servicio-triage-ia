@@ -347,7 +347,12 @@ función del dominio:
   `error_plataforma` si el caso no se pudo crear.
 - **Prioridad:** base por categoría y la señal más fuerte del texto; una señal nunca la baja.
 - **Justificación:** el hecho de la solicitud (sin números de documento), la prioridad con su
-  motivo y su fuente, y el paso. En el cierre, «Información incompleta o faltante».
+  motivo y su fuente, y el paso. En el cierre, «Información incompleta o faltante». El hecho
+  va entre comillas, así que el del LLM solo se cita si sale del texto: hasta 200 caracteres
+  y cada palabra de 4 letras o más presente en la descripción. Si no cumple (paráfrasis o
+  texto inventado), se cita el fragmento que extraen las reglas. Cuando el servicio de
+  prioridad del cliente falla, la justificación dice que no respondió; el detalle técnico
+  (timeout, error de red, código HTTP) queda solo en el log.
 - **Empresas:** GASES DEL ORINOCO y MENSAJERIA DEL VALLE vienen del enunciado; RED MOVIL
   ANDINA y SALUD INTEGRAL DEL LLANO son ficticias, para mostrar reglas distintas. Las
   categorías, palabras clave y plataformas de todas son supuestas, salvo «Incidente

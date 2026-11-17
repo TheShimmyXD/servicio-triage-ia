@@ -36,7 +36,11 @@ from domain.duplicados import (
     normalizar_texto,
 )
 from domain.empresa import CatalogoEmpresas, ConfiguracionEmpresa
-from domain.informacion_minima import evaluar_informacion_minima, extraer_hecho_principal
+from domain.informacion_minima import (
+    evaluar_informacion_minima,
+    extraer_hecho_principal,
+    hecho_fiel_al_texto,
+)
 from domain.justificacion import construir_justificacion
 from domain.prioridad import DecisionPrioridad, calcular_prioridad
 from domain.proximo_paso import decidir_proximo_paso, estado_para
@@ -133,7 +137,7 @@ class CasoDeUsoTriage:
                 if suficiente
                 else clasificar_por_palabras_clave(texto, empresa.categorias)
             )
-            hecho = analisis.hechos or extraer_hecho_principal(texto)
+            hecho = _hecho_verificado(analisis, texto, solicitud.solicitud_id)
         else:
             reglas_info = empresa.informacion_minima
             suficiente = evaluar_informacion_minima(
@@ -253,6 +257,18 @@ class CasoDeUsoTriage:
         return DecisionPrioridad(
             prioridad, "así lo indica el servicio de prioridad del cliente", "servicio del cliente"
         )
+
+
+def _hecho_verificado(analisis: AnalisisLLM, texto: str, solicitud_id: str) -> str | None:
+    """Cita el hecho del LLM solo si sale del texto; si no, el de las reglas.
+
+    La justificación lo pone entre comillas y llega a la plataforma del cliente: una
+    paráfrasis o un texto inyectado no pueden pasar por palabras del cliente.
+    """
+    hecho = hecho_fiel_al_texto(analisis.hechos, texto)
+    if hecho is None and analisis.hechos:
+        registro.warning("llm_hecho_no_verificado solicitud=%s", solicitud_id)
+    return hecho or extraer_hecho_principal(texto)
 
 
 def _documento_verificado(analisis: AnalisisLLM | None, texto: str) -> DocumentoCliente | None:

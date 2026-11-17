@@ -67,8 +67,10 @@ def test_servicio_apagado_agota_los_reintentos_del_yaml():
         raise httpx2.ConnectError("conexión rechazada", request=pedido)
 
     esperas: list[float] = []
-    with pytest.raises(ErrorProveedorPrioridad, match="no respondió tras 3 intentos"):
+    with pytest.raises(ErrorProveedorPrioridad, match="no respondió tras 3 intentos") as error:
         _proveedor(apagado, esperas).obtener(MDV, DOCUMENTO, "Envío retrasado")
+    # El detalle técnico va al log, no al motivo que termina en la justificación.
+    assert "ConnectError" not in str(error.value)
     assert len(llamadas) == MDV.proveedor_prioridad.reintentos + 1
     assert esperas == [0.2, 0.4]
 
@@ -80,8 +82,9 @@ def test_un_4xx_no_se_reintenta():
         llamadas.append(pedido)
         return httpx2.Response(422, json={"detail": "x"})
 
-    with pytest.raises(ErrorProveedorPrioridad, match="HTTP 422"):
+    with pytest.raises(ErrorProveedorPrioridad, match="rechazó el pedido") as error:
         _proveedor(rechazo).obtener(MDV, DOCUMENTO, None)
+    assert "HTTP" not in str(error.value)
     assert len(llamadas) == 1
 
 
@@ -125,3 +128,5 @@ def test_triage_con_el_servicio_apagado_usa_las_reglas_y_lo_dice():
     assert resultado.solicitud_prioridad is Prioridad.MEDIA
     assert "no se usó el servicio de prioridad del cliente" in resultado.justificacion
     assert "reglas de la empresa" in resultado.justificacion
+    for detalle_tecnico in ("ConnectError", "error de red", "HTTP", "timeout"):
+        assert detalle_tecnico not in resultado.justificacion

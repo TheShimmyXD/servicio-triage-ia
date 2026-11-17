@@ -75,7 +75,10 @@ class ProveedorPrioridadHTTP:
                 )
                 if intento < intentos:
                     self._dormir(ESPERA_INICIAL_S * 2 ** (intento - 1))
-        raise ErrorProveedorPrioridad(f"no respondió tras {intentos} intentos: {motivo}")
+        # El motivo técnico ya quedó en el log de cada intento; la justificación que lee
+        # el analista solo necesita saber que el servicio no respondió.
+        veces = "1 intento" if intentos == 1 else f"{intentos} intentos"
+        raise ErrorProveedorPrioridad(f"no respondió tras {veces}")
 
     def _pedir(self, url: str, pedido: dict[str, str | None], timeout_s: float) -> Prioridad:
         try:
@@ -88,7 +91,8 @@ class ProveedorPrioridadHTTP:
             raise _FallaReintentable(f"HTTP {respuesta.status_code}")
         if respuesta.status_code != 200:
             # Un 4xx no cambia al repetir: el pedido no le sirve al cliente.
-            raise ErrorProveedorPrioridad(f"rechazó el pedido (HTTP {respuesta.status_code})")
+            registro.warning("proveedor_prioridad_rechazo http=%d", respuesta.status_code)
+            raise ErrorProveedorPrioridad("rechazó el pedido")
         try:
             return _RespuestaPrioridad.model_validate_json(respuesta.content).prioridad
         except ValidationError as error:

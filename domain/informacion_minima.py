@@ -121,3 +121,31 @@ def extraer_hecho_principal(texto: str) -> str | None:
             hecho = hecho[:_MAX_CARACTERES_HECHO].rsplit(" ", 1)[0] + "..."
         return hecho or None
     return None
+
+
+MAX_CARACTERES_HECHO_LLM = 200
+"""Un hecho más largo que esto ya no es una frase breve: no se cita."""
+_PALABRA = re.compile(r"\w+")
+_MIN_LETRAS_PALABRA_SIGNIFICATIVA = 4
+
+
+def hecho_fiel_al_texto(hecho: str | None, texto: str) -> str | None:
+    """Devuelve el hecho propuesto por el LLM solo si sale del texto del cliente.
+
+    La justificación lo cita entre comillas y viaja a la plataforma de la empresa, así que
+    no puede ser una paráfrasis ni algo inventado: cada palabra significativa (4 letras o
+    más, sin tildes ni mayúsculas) tiene que estar en el texto. Si no cumple, o es largo,
+    devuelve None y quien llama usa extraer_hecho_principal. Los números largos se ocultan
+    como en el respaldo.
+    """
+    if not hecho or len(hecho) > MAX_CARACTERES_HECHO_LLM:
+        return None
+    palabras_texto = set(_PALABRA.findall(normalizar(texto)))
+    significativas = [
+        p
+        for p in _PALABRA.findall(normalizar(hecho))
+        if len(p) >= _MIN_LETRAS_PALABRA_SIGNIFICATIVA
+    ]
+    if not significativas or any(p not in palabras_texto for p in significativas):
+        return None
+    return _NUMERO_LARGO.sub("[documento]", hecho).strip(" .,;:") or None
