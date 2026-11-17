@@ -379,6 +379,12 @@ función del dominio:
   Si hay varios, gana el primero.
 - **Estado:** `pendiente` en `GESTION_EXTERNA`, `cerrado` en los otros dos pasos y
   `error_plataforma` si el caso no se pudo crear.
+- **Cierre por notificación de la empresa (fuera del alcance):** el paso 6 termina cuando la
+  empresa resuelve el caso y avisa para cerrarlo con el motivo de su analista. Esta versión
+  crea el caso y lo deja `pendiente`; recibir esa notificación no está implementado. El
+  diseño previsto es un `POST /solicitudes/{solicitud_id}/resolucion` (o los eventos de cada
+  plataforma en una cola) que verifique que la solicitud existe y está `pendiente`, la pase a
+  `cerrado` y guarde el motivo y quién lo dio, a través del mismo puerto de almacenamiento.
 - **Prioridad:** base por categoría y la señal más fuerte del texto; una señal nunca la baja.
 - **Justificación:** el hecho de la solicitud (sin números de documento), la prioridad con su
   motivo y su fuente, y el paso. En el cierre, «Información incompleta o faltante». El hecho
@@ -406,7 +412,7 @@ En Windows: `.venv\Scripts\python -m pytest` y `.venv\Scripts\python -m ruff che
 GitHub Actions corre lo mismo (`ruff check`, `ruff format --check` y `pytest`) en cada cambio a
 `main`: `.github/workflows/pruebas.yml`.
 
-173 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
+180 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
 respuesta real de Groq guardada en `tests/fixtures/` comprueba el análisis de su formato.
 
 | Carpeta | Qué cubre |

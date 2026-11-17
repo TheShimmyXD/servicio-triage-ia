@@ -101,7 +101,7 @@ La tabla sigue las carpetas del repositorio. Los *puertos* son las interfaces qu
 - Si llegan a la vez dos copias de la misma solicitud, un candado dentro del proceso las ordena. Con varias réplicas, esa garantía tiene que pasar a la base de datos.
 - El caso se crea durante la misma petición: si la plataforma falla, quien llama espera los tres intentos. En producción, esa creación pasa a una cola.
 
-Hay además límites menores: la configuración se lee al arrancar, así que un cambio exige reiniciar; la detección de la información mínima está pensada para textos en español, y conectar una plataforma real (no simulada) requiere programar su adaptador.
+Hay además límites menores: la configuración se lee al arrancar, así que un cambio exige reiniciar; la detección de la información mínima está pensada para textos en español, y conectar una plataforma real (no simulada) requiere programar su adaptador. Queda fuera del alcance el cierre por notificación de la empresa (paso 6): el caso queda `pendiente`; el diseño previsto es un endpoint de resolución, o los eventos de la plataforma en la misma cola, que lo cierre con el motivo de su analista.
 
 ## 3. Por qué soporta el crecimiento en clientes y categorías
 
@@ -115,13 +115,13 @@ Hay además límites menores: la configuración se lee al arrancar, así que un 
 
 ## 4. Estrategia de IA y por qué
 
-La estrategia es **híbrida**: el modelo de lenguaje interpreta el texto y las reglas de configuración toman las decisiones de negocio.
+La estrategia es **híbrida**: el modelo de lenguaje interpreta el texto y las reglas de configuración deciden.
 
 **Qué hace el modelo.** Lee la descripción y devuelve una respuesta estructurada que debe cumplir un esquema JSON estricto: la categoría (solo puede elegir entre las de la empresa), si la información es suficiente, los hechos de la solicitud y el tipo y número del documento del cliente. Se usa gpt-oss-20b, un modelo abierto servido por Groq, por su salida estricta, su velocidad y su bajo costo; cambiarlo es configuración.
 
 **Por qué un modelo y no solo reglas.** Las solicitudes llegan en texto libre, con errores y muchas formas de decir lo mismo; un clasificador propio exigiría datos etiquetados y reentrenarlo con cada empresa nueva, mientras que el modelo recibe las categorías en cada petición. En 38 solicitudes etiquetadas (`evaluacion/`, con 2 inyecciones), el modelo acertó la categoría en 28 de 28 y el próximo paso en 37 de 38 (falla un pedido vago que toma como trámite), con mediana de 0,9 s; las reglas solas, 10 de 28 y 21 de 38, porque ante la duda cierran por falta de información. Ese es el riesgo del respaldo: sin modelo, un caso válido puede cerrarse; el log marca la fuente de cada respuesta para revisarlo. El conjunto es pequeño y sintético: ampliarlo con casos reales es el paso siguiente.
 
-**Por qué las decisiones no las toma el modelo.** La prioridad, el próximo paso y el estado salen de reglas porque forman parte del acuerdo con cada empresa: tienen que ser deterministas, auditables y repetibles, y no pueden depender de que un proveedor externo responda.
+**Por qué las decisiones no las toma el modelo.** La prioridad, el próximo paso y el estado salen de reglas porque forman parte del acuerdo con cada empresa: tienen que ser deterministas, auditables y repetibles, y no pueden depender de un proveedor externo.
 
 **Controles sobre la respuesta del modelo.**
 
@@ -144,11 +144,11 @@ La estrategia es **híbrida**: el modelo de lenguaje interpreta el texto y las r
 
 Cada error trae un código legible (como `EMPRESA_NO_PARAMETRIZADA`) y un mensaje, descritos en el README.
 
-Para el monitoreo, el servicio deja en el log cada intento fallido contra una plataforma (con la empresa, la solicitud y el número de intento), cada llamada al modelo con su latencia y sus tokens, y cada documento que el modelo propuso pero no aparecía en el texto. Además, el endpoint `/metricas` informa por empresa cuántos casos se crearon, cuántos intentos fallaron, cuántos casos no se pudieron crear, cuántos duplicados y conflictos hubo y cuántas veces falló el modelo, y `/salud` indica si el servicio está arriba. El repositorio incluye 173 pruebas automáticas, organizadas por capa y sin acceso a red.
+Para el monitoreo, el servicio deja en el log cada intento fallido contra una plataforma (con la empresa, la solicitud y el número de intento), cada llamada al modelo con su latencia y sus tokens, y cada documento que el modelo propuso pero no aparecía en el texto. Además, el endpoint `/metricas` informa por empresa cuántos casos se crearon, cuántos intentos fallaron, cuántos casos no se pudieron crear, cuántos duplicados y conflictos hubo y cuántas veces falló el modelo, y `/salud` indica si el servicio está arriba. El repositorio incluye 180 pruebas automáticas, organizadas por capa y sin acceso a red.
 
 ## 6. Propuesta de despliegue en la nube
 
-La propuesta usa AWS, aunque cada pieza tiene un equivalente directo en Azure o GCP: el servicio no depende de nada propio de un proveedor.
+La propuesta usa AWS; cada pieza tiene un equivalente directo en Azure o GCP.
 
 <figure>
 <svg viewBox="0 0 640 184" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Despliegue en la nube">
