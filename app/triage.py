@@ -57,7 +57,13 @@ class CasoDeUsoTriage:
         documento = _documento_verificado(analisis, texto)
         if analisis is not None:
             suficiente = analisis.informacion_suficiente
-            categoria: str | None = analisis.categoria
+            # El esquema obliga al LLM a elegir una categoría aun sin datos; si dice que la
+            # información no alcanza, la categoría solo se conserva si las reglas la ven.
+            categoria: str | None = (
+                analisis.categoria
+                if suficiente
+                else clasificar_por_palabras_clave(texto, empresa.categorias)
+            )
             hecho = analisis.hechos or extraer_hecho_principal(texto)
         else:
             reglas_info = empresa.informacion_minima

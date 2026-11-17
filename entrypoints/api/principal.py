@@ -97,4 +97,6 @@ def crear_aplicacion(triage: CasoDeUsoTriage | None = None) -> FastAPI:
     return aplicacion
 
 
+# Una línea por evento, en texto plano: la recogen uvicorn, Docker o el agente de logs.
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 aplicacion = crear_aplicacion()

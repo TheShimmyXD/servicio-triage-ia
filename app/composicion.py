@@ -9,7 +9,11 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+from pydantic import ValidationError
+
 from app.triage import CasoDeUsoTriage
+from services.ajustes import AjustesLLM
+from services.analizador_llm import crear_analizador
 from services.configuracion_empresas import (
     CARPETA_POR_DEFECTO,
     ConfiguracionInvalida,
@@ -24,12 +28,21 @@ class ErrorArranque(RuntimeError):
     """Configuración de empresas o de plataformas que no permite arrancar."""
 
 
-def construir_triage(carpeta_empresas: Path | None = None) -> CasoDeUsoTriage:
+def construir_triage(
+    carpeta_empresas: Path | None = None, ajustes_llm: AjustesLLM | None = None
+) -> CasoDeUsoTriage:
     carpeta = carpeta_empresas or CARPETA_POR_DEFECTO
     try:
         catalogo = cargar_catalogo(carpeta)
         plataformas = {e.nombre: crear_plataforma(e.plataforma) for e in catalogo.empresas}
-    except (ConfiguracionInvalida, PlataformaDesconocida) as error:
+        ajustes = ajustes_llm or AjustesLLM()
+    except (ConfiguracionInvalida, PlataformaDesconocida, ValidationError) as error:
         raise ErrorArranque(str(error)) from error
-    registro.info("arranque empresas=%d carpeta=%s", len(catalogo), carpeta.name)
-    return CasoDeUsoTriage(catalogo=catalogo, plataformas=plataformas)
+    analizador = crear_analizador(ajustes)
+    registro.info(
+        "arranque empresas=%d carpeta=%s llm=%s",
+        len(catalogo),
+        carpeta.name,
+        ajustes.llm_modelo if analizador else "reglas",
+    )
+    return CasoDeUsoTriage(catalogo=catalogo, plataformas=plataformas, analizador=analizador)
