@@ -98,6 +98,28 @@ def test_salud_exige_menos_elementos():
 
 
 @pytest.mark.parametrize(
+    "texto",
+    [
+        "Mi hijo tiene fiebre alta desde anoche, necesito que lo atiendan hoy",
+        "Mi mamá tiene la fiebre muy alta y no baja",
+        "Necesito una cita, que me atiendan hoy por favor",
+        "Mi papá convulsionó en la casa, pido cita con neurología",
+    ],
+)
+def test_salud_sube_a_alta_por_sintoma_o_atencion_del_dia(texto):
+    salud = cargar_catalogo().obtener("SALUD INTEGRAL DEL LLANO")
+    decision = calcular_prioridad("Cita médica", texto, salud.reglas_prioridad)
+    assert decision.prioridad is Prioridad.ALTA
+
+
+def test_salud_cita_de_rutina_sigue_en_baja():
+    salud = cargar_catalogo().obtener("SALUD INTEGRAL DEL LLANO")
+    texto = "Quiero agendar una cita de medicina general para el próximo mes, hoy no puedo ir"
+    decision = calcular_prioridad("Cita médica", texto, salud.reglas_prioridad)
+    assert decision.prioridad is Prioridad.BAJA
+
+
+@pytest.mark.parametrize(
     ("cambio", "mensaje"),
     [
         (("  Falla: GESTION_EXTERNA\n", "  Otra: GESTION_EXTERNA\n"), "categorías sin delegación"),

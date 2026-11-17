@@ -23,10 +23,15 @@ reglas_prioridad:
     Medicamentos: Media
     Queja por atención: Media
     Cita médica: Baja
+  # Supuesto: un síntoma de alarma o pedir atención el mismo día sube a Alta aunque
+  # la categoría sea una cita; la holgura de 2 admite "fiebre muy alta".
   senales:
     - prioridad: Alta
       frases: [urgente, urgencias, dolor fuerte, sangrado, embarazo, cancer,
-               oncologia, dialisis, tutela]
+               oncologia, dialisis, tutela, fiebre alta, convulsion, convulsiones,
+               convulsiono, desmayo, inconsciente, no puede respirar,
+               dificultad para respirar, le cuesta respirar, ahogando, atiendan hoy,
+               atienda hoy]
 
 delegaciones:
   Autorización de procedimiento: GESTION_EXTERNA
