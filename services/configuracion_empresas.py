@@ -61,6 +61,8 @@ class _InformacionMinima(_Estricto):
 class _Plataforma(_Estricto):
     nombre: TextoNoVacio
     parametros: dict[str, Any] = Field(default_factory=dict)
+    intentos: int = Field(default=3, ge=1, le=10)
+    espera_inicial_s: float = Field(default=0.2, ge=0, le=10)
 
 
 class _ProveedorReglas(_Estricto):
@@ -128,7 +130,10 @@ class _Empresa(_Estricto):
                 frases_extra={e: tuple(f) for e, f in self.informacion_minima.frases_extra.items()},
             ),
             plataforma=ConfiguracionPlataforma(
-                self.plataforma.nombre, dict(self.plataforma.parametros)
+                self.plataforma.nombre,
+                dict(self.plataforma.parametros),
+                intentos=self.plataforma.intentos,
+                espera_inicial_s=self.plataforma.espera_inicial_s,
             ),
             proveedor_prioridad=(
                 ConfiguracionProveedorPrioridad(

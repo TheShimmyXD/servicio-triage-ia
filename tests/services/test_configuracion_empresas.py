@@ -104,6 +104,10 @@ def test_salud_exige_menos_elementos():
         (("plataforma:", "plataformas:"), "plataformas"),
         (("{Falla: Media}", "{Otra: Media}"), "categorías que no existen"),
         (("palabras_clave: [falla]", "palabras_clave: []"), "palabras_clave"),
+        (
+            ("  nombre: zendesk_simulada\n", "  nombre: zendesk_simulada\n  intentos: 0\n"),
+            "intentos",
+        ),
     ],
 )
 def test_rechaza_una_empresa_mal_formada(tmp_path, cambio, mensaje):
@@ -155,3 +159,15 @@ def test_quinta_empresa_solo_con_un_archivo(tmp_path):
     assert evaluacion.suficiente
     assert calcular_prioridad("Falla", texto, nueva.reglas_prioridad).prioridad is Prioridad.ALTA
     assert decidir_proximo_paso(True, "Falla", nueva.delegaciones) is ProximoPaso.GESTION_EXTERNA
+
+
+def test_reintentos_de_plataforma_por_empresa(tmp_path):
+    contenido = EMPRESA_MINIMA.format(nombre="UNA").replace(
+        "  nombre: zendesk_simulada\n",
+        "  nombre: zendesk_simulada\n  intentos: 1\n  espera_inicial_s: 0\n",
+    )
+    empresa = cargar_empresa(_escribir(tmp_path, "una.yaml", contenido))
+    assert (empresa.plataforma.intentos, empresa.plataforma.espera_inicial_s) == (1, 0)
+    # Sin los campos, los valores de siempre.
+    por_defecto = cargar_empresa(_escribir(tmp_path, "dos.yaml", EMPRESA_MINIMA.format(nombre="D")))
+    assert (por_defecto.plataforma.intentos, por_defecto.plataforma.espera_inicial_s) == (3, 0.2)

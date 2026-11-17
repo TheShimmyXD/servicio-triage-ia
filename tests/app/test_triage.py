@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from datetime import date
 
 import pytest
@@ -9,7 +10,7 @@ from app.metricas import Evento
 from app.triage import CasoDeUsoTriage
 from domain.contrato import EstadoCaso, Prioridad, Solicitud
 from domain.duplicados import SolicitudEnConflicto
-from domain.empresa import EmpresaNoParametrizada
+from domain.empresa import CatalogoEmpresas, EmpresaNoParametrizada
 from domain.puertos import AnalisisLLM
 from services.configuracion_empresas import cargar_catalogo
 from services.repositorio_memoria import RepositorioSolicitudesMemoria
@@ -199,3 +200,18 @@ def test_llm_caido_suma_a_las_metricas():
     caso_de_uso, _ = _armar(analizador=AnalizadorFalso(error="timeout"))
     caso_de_uso.ejecutar(REQ_001)
     assert caso_de_uso.metricas.contar(Evento.LLM_FALLIDO, "GASES DEL ORINOCO") == 1
+
+
+def test_empresa_con_un_solo_intento_no_reintenta():
+    caso_de_uso, plataformas = _armar()
+    gas = caso_de_uso.catalogo.obtener("GASES DEL ORINOCO")
+    caso_de_uso.catalogo = CatalogoEmpresas(
+        replace(e, plataforma=replace(e.plataforma, intentos=1)) if e is gas else e
+        for e in caso_de_uso.catalogo.empresas
+    )
+    plataforma = plataformas["GASES DEL ORINOCO"]
+    plataforma.fallas_pendientes = 1
+    resultado = caso_de_uso.ejecutar(REQ_001)
+    assert resultado.estado is EstadoCaso.ERROR_PLATAFORMA
+    assert plataforma.llamadas == 1
+    assert "tras 1 intento (" in resultado.justificacion

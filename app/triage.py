@@ -69,7 +69,6 @@ class CasoDeUsoTriage:
     repositorio: RepositorioSolicitudes = field(kw_only=True)
     """Lo entrega app/composicion: el caso de uso solo conoce el puerto del dominio."""
     metricas: Metricas = field(default_factory=Metricas)
-    reintentos: PoliticaReintentos = field(default_factory=PoliticaReintentos)
     dormir: Callable[[float], None] = time.sleep
     """Las pruebas lo reemplazan para no esperar los reintentos."""
     _candados: dict[tuple[str, str], threading.Lock] = field(default_factory=dict, init=False)
@@ -144,7 +143,10 @@ class CasoDeUsoTriage:
                 self.plataformas[empresa.nombre],
                 caso,
                 nombre_plataforma,
-                self.reintentos,
+                PoliticaReintentos(
+                    intentos=empresa.plataforma.intentos,
+                    espera_inicial=empresa.plataforma.espera_inicial_s,
+                ),
                 self.metricas,
                 self.dormir,
             )
@@ -153,7 +155,8 @@ class CasoDeUsoTriage:
                 estado = EstadoCaso.ERROR_PLATAFORMA
                 justificacion = (
                     f"{justificacion} No se pudo crear el caso en {nombre_plataforma} tras "
-                    f"{creacion.intentos} intentos ({creacion.motivo}); reenviar la misma "
+                    f"{creacion.intentos} {'intento' if creacion.intentos == 1 else 'intentos'} "
+                    f"({creacion.motivo}); reenviar la misma "
                     "solicitud lo vuelve a intentar."
                 )
 

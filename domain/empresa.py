@@ -39,6 +39,10 @@ class ConfiguracionPlataforma:
 
     nombre: str
     parametros: Mapping[str, Any] = field(default_factory=dict)
+    intentos: int = 3
+    """Intentos de crear el caso antes de marcarlo como error de plataforma."""
+    espera_inicial_s: float = 0.2
+    """Espera antes del segundo intento; se duplica en cada uno."""
 
 
 @dataclass(frozen=True)

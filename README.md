@@ -245,7 +245,8 @@ plataforma:
 
 `GET /empresas` la lista de inmediato y sus casos salen como `SN-000001`. Opcionalmente,
 `informacion_minima` define qué elementos exige y frases propias para detectarlos, y
-`proveedor_prioridad` dice quién decide la prioridad (ver los YAML existentes).
+`proveedor_prioridad` dice quién decide la prioridad, y `plataforma` acepta `intentos` (3) y
+`espera_inicial_s` (0,2) para los reintentos de creación (ver los YAML existentes).
 
 **Agregar una categoría.** Sumarla a `categorias` (la descripción orienta al LLM y las
 palabras clave al respaldo por reglas), darle prioridad en `reglas_prioridad.por_categoria`
@@ -277,7 +278,8 @@ Un contrato distinto se resuelve con un adaptador que cumpla `ProveedorPrioridad
 ## Manejo de errores
 
 **La plataforma externa falla.** Cada creación de caso se intenta 3 veces con espera
-creciente (0,2 s y 0,4 s). Si todas fallan, la respuesta es 200 con
+creciente (0,2 s y 0,4 s). Cada empresa puede cambiarlo con `intentos` y `espera_inicial_s` en
+la sección `plataforma` de su YAML. Si todas fallan, la respuesta es 200 con
 `"estado": "error_plataforma"`, el id externo en `null` y el motivo en la justificación:
 el triage ya está hecho y no se pierde. Reenviar la misma solicitud vuelve a intentar la
 creación. Para verlo, se agrega `fallas_iniciales: 3` en `parametros` de la plataforma de
@@ -365,7 +367,7 @@ En Windows: `.venv\Scripts\python -m pytest` y `.venv\Scripts\python -m ruff che
 GitHub Actions corre lo mismo (`ruff check`, `ruff format --check` y `pytest`) en cada cambio a
 `main`: `.github/workflows/pruebas.yml`.
 
-142 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
+145 pruebas, sin red: el LLM y los servicios de prioridad se reemplazan por dobles, y una
 respuesta real de Groq guardada en `tests/fixtures/` comprueba el análisis de su formato.
 
 | Carpeta | Qué cubre |
