@@ -12,6 +12,7 @@ from domain.duplicados import SolicitudEnConflicto
 from domain.empresa import EmpresaNoParametrizada
 from domain.puertos import AnalisisLLM
 from services.configuracion_empresas import cargar_catalogo
+from services.repositorio_memoria import RepositorioSolicitudesMemoria
 from tests.app.falsos import AnalizadorFalso, PlataformaFalsa, ProveedorPrioridadFalso
 from tests.domain.datos import TEXTO_INCOMPLETO, TEXTO_JUANA
 
@@ -32,6 +33,7 @@ def _armar(analizador=None, proveedor=None):
         analizador=analizador,
         proveedores_prioridad={"http": proveedor} if proveedor else None,
         hoy=lambda: HOY,
+        repositorio=RepositorioSolicitudesMemoria(),
     )
     return caso_de_uso, plataformas
 

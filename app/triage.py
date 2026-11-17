@@ -49,7 +49,6 @@ from domain.puertos import (
     ProveedorPrioridad,
     RepositorioSolicitudes,
 )
-from services.repositorio_memoria import RepositorioSolicitudesMemoria
 
 registro = logging.getLogger(__name__)
 
@@ -67,7 +66,8 @@ class CasoDeUsoTriage:
     proveedores_prioridad: Mapping[str, ProveedorPrioridad] | None = None
     """Proveedores externos por tipo ("http"). El tipo "reglas" no necesita proveedor."""
     hoy: Callable[[], date] = date.today
-    repositorio: RepositorioSolicitudes = field(default_factory=RepositorioSolicitudesMemoria)
+    repositorio: RepositorioSolicitudes = field(kw_only=True)
+    """Lo entrega app/composicion: el caso de uso solo conoce el puerto del dominio."""
     metricas: Metricas = field(default_factory=Metricas)
     reintentos: PoliticaReintentos = field(default_factory=PoliticaReintentos)
     dormir: Callable[[float], None] = time.sleep

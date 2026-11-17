@@ -82,14 +82,14 @@ La tabla sigue las carpetas del repositorio. Los *puertos* son las interfaces qu
 | Componente | Responsabilidad | Depende de |
 |---|---|---|
 | `domain/` | Las reglas del triage: contrato de entrada y salida, información mínima, prioridad, próximo paso, justificación, documento del cliente y duplicados. Define los cuatro puertos. | Nada: no usa red ni archivos. |
-| `app/triage` | Orquesta el recorrido, reintenta la creación del caso, evita duplicados y lleva las métricas. | El dominio y sus puertos. |
+| `app/triage` | Orquesta el recorrido, reintenta la creación del caso, evita duplicados y lleva las métricas. | Solo el dominio y sus puertos. |
 | `app/composicion` | Al arrancar, lee la configuración y conecta cada puerto con su adaptador. | Todas las capas (solo aquí). |
 | `services/analizador_llm` | Pide al modelo la categoría, si la información alcanza y el documento del cliente. | Su puerto. |
 | `services/proveedor_prioridad_http` | Consulta el servicio de prioridad de los clientes que tienen uno. | Su puerto. |
 | `services/plataformas_simuladas` | Crea el caso en la plataforma de la empresa y devuelve su número. | Su puerto. |
 | `services/repositorio_memoria` | Guarda cada solicitud atendida para reconocer los duplicados. | Su puerto. |
 | `services/configuracion_empresas` | Carga y valida los archivos de las empresas; si uno tiene un error, el servicio no arranca y señala el archivo y el campo. | Pydantic y PyYAML. |
-| `entrypoints/api` | Expone los endpoints y convierte los errores en respuestas HTTP. | Solo `app/`. |
+| `entrypoints/api` | Expone los endpoints y convierte los errores en respuestas HTTP. | `app/` y el contrato del dominio. |
 
 ### Qué está desacoplado y qué no
 

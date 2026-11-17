@@ -18,6 +18,7 @@ from services.analizador_llm import (
     interpretar_respuesta,
 )
 from services.configuracion_empresas import cargar_catalogo
+from services.repositorio_memoria import RepositorioSolicitudesMemoria
 from tests.app.falsos import PlataformaFalsa
 from tests.domain.datos import TEXTO_INCOMPLETO, TEXTO_JUANA
 
@@ -127,7 +128,10 @@ def test_sin_clave_o_desactivado_no_hay_analizador():
 
 def _triage(manejador) -> tuple[CasoDeUsoTriage, dict]:
     plataformas = {n: PlataformaFalsa("EXT") for n in CATALOGO.nombres}
-    return CasoDeUsoTriage(CATALOGO, plataformas, _analizador(manejador)), plataformas
+    caso_de_uso = CasoDeUsoTriage(
+        CATALOGO, plataformas, _analizador(manejador), repositorio=RepositorioSolicitudesMemoria()
+    )
+    return caso_de_uso, plataformas
 
 
 def test_triage_con_el_llm_caido_sigue_por_reglas():

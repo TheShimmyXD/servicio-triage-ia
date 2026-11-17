@@ -25,6 +25,7 @@ from services.plataformas_simuladas import (
     crear_plataforma,
 )
 from services.proveedor_prioridad_http import ProveedorPrioridadHTTP
+from services.repositorio_memoria import RepositorioSolicitudesMemoria
 
 registro = logging.getLogger(__name__)
 
@@ -68,4 +69,5 @@ def construir_triage(
         plataformas=plataformas,
         analizador=analizador,
         proveedores_prioridad=proveedores_prioridad,
+        repositorio=RepositorioSolicitudesMemoria(),
     )

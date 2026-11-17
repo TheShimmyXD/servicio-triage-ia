@@ -10,6 +10,7 @@ from domain.contrato import DocumentoCliente, Prioridad, Solicitud
 from domain.puertos import ErrorProveedorPrioridad
 from services.configuracion_empresas import cargar_catalogo
 from services.proveedor_prioridad_http import ProveedorPrioridadHTTP
+from services.repositorio_memoria import RepositorioSolicitudesMemoria
 from simuladores.mensajeria_del_valle.servicio import PedidoPrioridad, calcular_prioridad_cliente
 from tests.app.falsos import PlataformaFalsa
 
@@ -97,7 +98,12 @@ def test_sin_documento_no_llama_al_servicio():
 
 def _triage(proveedor):
     plataformas = {nombre: PlataformaFalsa("EXT") for nombre in CATALOGO.nombres}
-    return CasoDeUsoTriage(CATALOGO, plataformas, proveedores_prioridad={"http": proveedor})
+    return CasoDeUsoTriage(
+        CATALOGO,
+        plataformas,
+        proveedores_prioridad={"http": proveedor},
+        repositorio=RepositorioSolicitudesMemoria(),
+    )
 
 
 def test_triage_con_el_servicio_arriba_usa_su_prioridad():
