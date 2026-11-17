@@ -1,0 +1,87 @@
+{
+  "fecha": "2026-11-17",
+  "latencia_ms": 422,
+  "pedido": {
+    "model": "openai/gpt-oss-20b",
+    "temperature": 0,
+    "messages": [
+      {
+        "role": "system",
+        "content": "Clasifica la solicitud y extrae el documento del cliente. Responde en JSON."
+      },
+      {
+        "role": "user",
+        "content": "Soy cliente con CC 102045678, desde ayer no tengo servicio de gas en mi casa y huele a gas."
+      }
+    ],
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "clasificacion",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "categoria",
+            "tipo_documento",
+            "numero_documento"
+          ],
+          "properties": {
+            "categoria": {
+              "type": "string",
+              "enum": [
+                "Incidente técnico",
+                "Consulta",
+                "Reclamo"
+              ]
+            },
+            "tipo_documento": {
+              "type": "string"
+            },
+            "numero_documento": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "respuesta": {
+    "id": "chatcmpl-95a7c4df-9c86-46d2-a8f7-769586c984b6",
+    "object": "chat.completion",
+    "created": 1794938099,
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"categoria\":\"Incidente técnico\",\"tipo_documento\":\"CC\",\"numero_documento\":\"102045678\"}",
+          "reasoning": "We need to classify the request and extract the document. The schema: required fields: categoria, tipo_documento, numero_documento. The user says \"Soy cliente con CC 102045678, desde ayer no tengo servicio de gas en mi casa y huele a gas.\" So category likely \"Incidente técnico\" (technical incident). Document type: \"CC\" (cedula de ciudadanía). Document number: \"102045678\". So produce JSON: {\"categoria\":\"Incidente técnico\",\"tipo_documento\":\"CC\",\"numero_documento\":\"102045678\"}. Ensure compact JSON."
+        },
+        "logprobs": null,
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.064910142,
+      "prompt_tokens": 242,
+      "prompt_time": 0.013677324,
+      "completion_tokens": 153,
+      "completion_time": 0.163886678,
+      "total_tokens": 395,
+      "total_time": 0.177564002,
+      "completion_tokens_details": {
+        "reasoning_tokens": 119
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_84bb35977d",
+    "x_groq": {
+      "id": "req_01m7nabncheayseyftbe9zwee1",
+      "seed": 261326002
+    },
+    "service_tier": "on_demand"
+  }
+}
